@@ -95,6 +95,7 @@ jobs:
         run: |
           ls -l
           ls -l toolbox/distribution
+          ls -l toolbox/distribution/etc/setup
       - name: Copy files separated by target for archiving
         run: |
           mkdir -p zip/cmsis-toolbox-windows-amd64/bin zip/cmsis-toolbox-windows-amd64/etc zip/cmsis-toolbox-windows-amd64/doc
