@@ -1,0 +1,29 @@
+{
+  "ignorePatterns": [
+    {
+      "pattern": [
+        "https://github.com/",
+        "https://open-cmsis-pack.github.io/",
+        "https://arm-software.github.io/",
+        "https://developer.arm.com/",
+        "https://www.iar.com/",
+        "https://www.keil.com/",
+      ]
+    }
+  ],
+  "httpHeaders": [
+    {
+      "urls": [
+        "https://github.com/",
+        "https://open-cmsis-pack.github.io/",
+        "https://arm-software.github.io/",
+        "https://developer.arm.com/",
+        "https://www.iar.com/",
+        "https://www.keil.com/",
+      ],
+      "headers": {
+        "Accept-Encoding": "zstd, br, gzip, deflate"
+      }
+    }
+  ],
+}
