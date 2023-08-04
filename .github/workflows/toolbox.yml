@@ -7,6 +7,7 @@ on:
       - '.github/workflows/toolbox.yml'
       - '**'
       - '!docs/**'
+      - '!README.md'
   pull_request:
     paths:
       - '.github/workflows/toolbox.yml'
@@ -231,6 +232,7 @@ jobs:
     needs: [ create_archives ]
     timeout-minutes: 15
     runs-on: ${{ matrix.config.os }}
+    name: 'Test (${{ matrix.config.target }}, ${{ matrix.config.arch }})'
     strategy:
       fail-fast: true
       matrix:

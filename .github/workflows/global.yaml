@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - '!docs/**'
+      - '!README.md'
   release:
     types: [ published ]
 jobs:
