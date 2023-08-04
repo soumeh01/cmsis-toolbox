@@ -29,9 +29,11 @@ There are three different ways to setup the CMSIS-Toolbox:
   
 ## Manual Setup
 
-Download the CMSIS-Toolbox from the [**release page**](https://github.com/Open-CMSIS-Pack/cmsis-toolbox/releases). It is provided for Windows (amd64), Linux (amd64, arm64), and MacOS/Darwin (amd64, arm64) in an archive file.
+Download the CMSIS-Toolbox from the [**release page**](https://github.com/Open-CMSIS-Pack/cmsis-toolbox/releases).
+It is provided for Windows (amd64), Linux (amd64, arm64), and MacOS/Darwin (amd64, arm64) in an archive file.
 
-To setup the **CMSIS-Toolbox** on a local computer, copy the content of the archive file to an `<cmsis-toolbox-installation-dir>`, for example to `/c/cmsis-toolbox`.
+To setup the **CMSIS-Toolbox** on a local computer, copy the content of the archive file to an
+`<cmsis-toolbox-installation-dir>`, for example to `/c/cmsis-toolbox`.
 
 ### Requirements
 
