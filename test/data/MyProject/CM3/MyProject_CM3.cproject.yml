@@ -1,0 +1,14 @@
+project:
+
+  packs:
+    - pack: ARM::CMSIS@5.9.0
+
+  groups:
+    - group: Main
+      files:
+        - file: ./MyMain.c
+
+  components:
+    - component: CMSIS:CORE
+    - component: Device:Startup&C Startup
+    - component: CMSIS:RTOS:Keil RTX
