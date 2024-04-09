@@ -11,8 +11,7 @@ ${RESOURCES}      ../resources
 
 
 *** Test Cases ***       ${input_file}    ${args}
-Run MyProject example    ${testDataDir}/MyProject${/}MyProject.csolution.yml    --context=MyProject_CM3.Debug+CM3    -r    --update-rte
-Run Hello example        ${testDataDir}/Hello${/}Hello.csolution.yml    -r    --update-rte
+Run Hello example        ${testDataDir}/Hello${/}Hello.csolution.yml    -p    -r    --update-rte
 
 
 *** Keywords ***

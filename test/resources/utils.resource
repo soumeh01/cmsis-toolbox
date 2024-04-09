@@ -13,4 +13,4 @@ Run Program
 Run csolution
     [Documentation]    Run csolution example with specified arguments
     [Arguments]        ${input_file}    @{args}
-    Run Program        cbuild.exe     ${input_file}    @{args}
+    Run Program        cbuild           ${input_file}    @{args}

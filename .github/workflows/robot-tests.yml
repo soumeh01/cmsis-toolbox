@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
 
-  validate:
+  robot-tests:
     runs-on: ubuntu-latest
     env:
       CMSIS_PACK_ROOT: /home/runner/.cache/arm/packs
@@ -42,48 +42,55 @@ jobs:
           path: /home/runner/.vcpkg
     
       - name: Prepare vcpkg env
-        working-directory: ./e2e-validation
+        working-directory: ./test
         run: |  
           . <(curl https://aka.ms/vcpkg-init.sh -L)
           vcpkg x-update-registry --all
           vcpkg activate
 
       - name: Activate Arm tool license
-        working-directory: ./e2e-validation
+        working-directory: ./test
         run: |
           . /home/runner/.vcpkg/vcpkg-init
           vcpkg activate
           armlm activate --server https://mdk-preview.keil.arm.com --product KEMDK-COM0
 
       - name: Run Test
+        working-directory: ./test
         run: |
-          python -m robot --outputdir results testcases/functional_tests
+          . /home/runner/.vcpkg/vcpkg-init
+          vcpkg activate
+          python -m robot --outputdir reports src/test.robot
 
-      - name: Run Test and create report
-        run: python -m robot -d reports -x junit-report.xml "testcases/functional_tests"
+      # - name: Run Test and create report
+      #   working-directory: ./test
+      #   run: |
+      #     python -m robot -d reports -x junit-report.xml "src/test.robot"
 
       - name: Run Robot Framework tests and generate report
+        if: always()
         run: |
-              echo "ROBOT_RC=$?" >> "$GITHUB_ENV"
+          echo "ROBOT_RC=$?" >> "$GITHUB_ENV"
 
       - name: Publish test results
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: reports
-          path: results
+          path: ./test/reports
 
   generate_report:
     runs-on: ubuntu-latest
+    needs: robot-tests
     steps:
-    - uses: actions/checkout@v4
-
     - name: Download reports
       uses: actions/download-artifact@v4
       with:
         name: reports
+        path: reports
 
     - name: Send report to commit
-      uses: joonvena/robotframework-reporter-action@v2
+      uses: joonvena/robotframework-reporter-action@v2.4
       with:
         gh_access_token: ${{ secrets.GITHUB_TOKEN }}
         
