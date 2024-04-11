@@ -16,7 +16,15 @@ Run cbuild
     [Arguments]        ${input_file}    @{args}
     Run Program        cbuild           ${input_file}    @{args}    -p    -r    --update-rte
 
-Copy Directory with Content
-    [Documentation]    Recursively copy context from source to destination
-    [Arguments]        ${src_dir}    ${dst_dir}
-    Copy Directory     ${src_dir}    ${dst_dir}
+Change Directory Permissions
+    [Documentation]                 Change directory permissions
+    [Arguments]                     ${target_dir}
+    ${result}    Run Process        chmod    -R    755    ${target_dir}
+    Should Be Equal                 ${result.rc}    ${0}
+
+Remove Directory with Content
+    [Documentation]                 Remove directory and its content from target directory
+    [Arguments]                     ${target_dir}
+    Change Directory Permissions    ${target_dir}
+    Remove Directory                ${target_dir}      recursive=${True}
+    Wait Until Removed              ${target_dir}      timeout=5 seconds
