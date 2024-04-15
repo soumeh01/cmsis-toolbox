@@ -8,11 +8,13 @@ on:
       - '**'
       - '!docs/**'
       - '!README.md'
+      - '!test/**'
   pull_request:
     paths:
       - '.github/workflows/toolbox.yml'
       - '**'
       - '!docs/**'
+      - '!test/**'
   release:
     types: [published]
 
