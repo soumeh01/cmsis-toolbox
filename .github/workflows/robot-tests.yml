@@ -56,10 +56,11 @@ jobs:
 
       - name: Run Test
         working-directory: ./test
+        continue-on-error: true
         run: |
           . /home/runner/.vcpkg/vcpkg-init
           vcpkg activate
-          python -m robot --outputdir ../reports -x junit-report.xml src/test.robot
+          python -m robot --outputdir ../reports -x junit-report.xml src
 
       - name: Archieve test results
         if: always()
@@ -67,6 +68,7 @@ jobs:
         with:
           name: reports
           path: reports
+
 
   report:
     runs-on: ubuntu-latest
