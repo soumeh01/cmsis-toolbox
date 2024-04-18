@@ -14,9 +14,11 @@ concurrency:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
-    # env:
-      # CMSIS_PACK_ROOT: /home/runner/.cache/arm/packs
+    runs-on: ${{ matrix.os }}
+    continue-on-error: true
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
 
@@ -31,33 +33,36 @@ jobs:
             pip install --upgrade pip
             pip install -r test/requirements.txt
 
-      - name: Cache vcpkg
-        uses: actions/cache@v4
-        with:
-          key: vcpkg-${{ runner.os }}-${{ runner.arch }}-${{ github.run_id }}
-          restore-keys: |
-              vcpkg-${{ runner.os }}-${{ runner.arch }}-
-          path: /home/runner/.vcpkg
+      # - name: Cache vcpkg
+      #   uses: actions/cache@v4
+      #   with:
+      #     key: vcpkg-${{ runner.os }}-${{ runner.arch }}-${{ github.run_id }}
+      #     restore-keys: |
+      #         vcpkg-${{ runner.os }}-${{ runner.arch }}-
+      #     path: /home/runner/.vcpkg
     
-      - name: Prepare vcpkg env
-        working-directory: ./test
-        run: |  
-          . <(curl https://aka.ms/vcpkg-init.sh -L)
-          vcpkg x-update-registry --all
-          vcpkg activate
+      # - name: Prepare vcpkg env
+      #   working-directory: ./test
+      #   run: |  
+      #     . <(curl https://aka.ms/vcpkg-init.sh -L)
+      #     vcpkg x-update-registry --all
+      #     vcpkg activate
+
+      - name: Setup vcpkg environment
+        uses: JonatanAntoni/actions/vcpkg@main
+        with:
+          config: "./test/vcpkg-configuration.json"
+          vcpkg-root: "${{ github.workspace }}/.vcpkg"
+          cache: "-"
 
       - name: Activate Arm tool license
         working-directory: ./test
         run: |
-          . /home/runner/.vcpkg/vcpkg-init
-          vcpkg activate
           armlm activate --server https://mdk-preview.keil.arm.com --product KEMDK-COM0
 
       - name: Run Test
         working-directory: ./test
         run: |
-          . /home/runner/.vcpkg/vcpkg-init
-          vcpkg activate
           python -m robot --outputdir ../reports -x junit-report.xml src
 
       - name: Archieve test results
