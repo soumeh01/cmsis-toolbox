@@ -17,7 +17,6 @@ jobs:
     runs-on: ubuntu-latest
     # env:
       # CMSIS_PACK_ROOT: /home/runner/.cache/arm/packs
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
@@ -56,7 +55,6 @@ jobs:
 
       - name: Run Test
         working-directory: ./test
-        continue-on-error: true
         run: |
           . /home/runner/.vcpkg/vcpkg-init
           vcpkg activate
@@ -72,6 +70,7 @@ jobs:
 
   report:
     runs-on: ubuntu-latest
+    if: always()
     needs: test
     permissions: write-all
     steps:
