@@ -5,7 +5,7 @@ Resource                ${RESOURCES}/utils.resource
 Library                 Collections 
 # Variables               TestExamples.yml
 Suite Setup             Global Setup
-Suite Teardown          Global Teardown
+# Suite Teardown          Global Teardown
 Test Template           Run Example
 
 *** Variables ***
@@ -16,6 +16,8 @@ ${include-define}           include-define
 ${language-scope}           language-scope
 ${linker-pre-processing}    linker-pre-processing
 ${pre-include}              pre-include
+${whitespace}               whitespace
+${trustzone}                trustzone
 
 *** Test Cases ***
 Validate build-asm Example
@@ -39,11 +41,16 @@ Validate linker-pre-processing Example
 Validate pre-include Example
     ${TEST_DATA_DIR}${/}${pre-include}${/}solution.csolution.yml    ${0}
 
+Validate whitespace Example
+    ${TEST_DATA_DIR}${/}${whitespace}${/}solution.csolution.yml    ${0}
+
+Validate trustzone Example
+     ${TEST_DATA_DIR}${/}${trustzone}${/}solution.csolution.yml    ${0}
 
 *** Keywords ***
 Run Example
     [Arguments]               ${input_file}      ${expect}      ${args}=@{EMPTY}
-    ${cbuildgen_args}=        Append Additional Arguments    ${args}
+    ${cbuildgen_args}=        Append Additional Arguments    ${args}    --output    ${TEST_DATA_DIR}${/}${build-cpp}${/}out_dir
     ${cbuild2cmake_args}=     Append Additional Arguments    ${args}    --cbuild2cmake
     ${ret_code1}=             Run cbuild                     ${input_file}    ${cbuildgen_args}
     ${ret_code2}=             Run cbuild                     ${input_file}    ${cbuild2cmake_args}
@@ -56,8 +63,15 @@ Append Additional Arguments
     RETURN                       ${args}
 
 
+*** Keywords ***
+Read Map File Section
+    [Arguments]    ${file_path}    ${section_name}
+    ${section}=    Evaluate    open('${file_path}').read().split('[${section_name}]', 1)[-1].split('[', 1)[0].strip()    BuiltIn
+    [Return]    ${section}
 
-
+Compare Sections
+    [Arguments]    ${section1}    ${section2}
+    Should Be Equal As Strings    ${section1}    ${section2}    msg=Sections are not identical
 
 
 

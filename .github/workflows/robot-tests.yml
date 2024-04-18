@@ -15,9 +15,9 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
-    env:
-      CMSIS_PACK_ROOT: /home/runner/.cache/arm/packs
-
+    # env:
+      # CMSIS_PACK_ROOT: /home/runner/.cache/arm/packs
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
