@@ -4,6 +4,7 @@ solution:
   target-types:
     - type: CM33
       device: ARMCM33_DSP_FP_TZ
+
     - type: CM35P
       device: ARMCM35P_DSP_FP_TZ
 

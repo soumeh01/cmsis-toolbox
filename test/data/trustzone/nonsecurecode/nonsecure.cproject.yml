@@ -4,15 +4,18 @@ project:
   misc:
     - for-compiler: AC6
       C: [-fshort-enums, -fshort-wchar]
+
   add-path:
-    - $OutDir(Secure)$
+    - $OutDir(secure)$
+
   components:
-    - component: C Startup
-    - component: CMSIS CORE
-    - component: Keil RTX5 Library_NS
+    - component: ARM::Device:Startup&C Startup
+    - component: ARM::CMSIS:CORE
+    - component: ARM::CMSIS:RTOS2:Keil RTX5&Library_NS
+
   groups:
     - group: Non-secure Code
       files: 
         - file: main_ns.c 
-        - file: $Source(Secure)$/interface.h
-        - file: $Output(Secure)$_CMSE_Lib.o
+        - file: $Source(secure)$/interface.h
+        - file: $Output(secure)$_CMSE_Lib.o
