@@ -41,21 +41,6 @@ jobs:
             pip install --upgrade pip
             pip install -r test/requirements.txt
 
-      # - name: Cache vcpkg
-      #   uses: actions/cache@v4
-      #   with:
-      #     key: vcpkg-${{ runner.os }}-${{ runner.arch }}-${{ github.run_id }}
-      #     restore-keys: |
-      #         vcpkg-${{ runner.os }}-${{ runner.arch }}-
-      #     path: /home/runner/.vcpkg
-    
-      # - name: Prepare vcpkg env
-      #   working-directory: ./test
-      #   run: |  
-      #     . <(curl https://aka.ms/vcpkg-init.sh -L)
-      #     vcpkg x-update-registry --all
-      #     vcpkg activate
-
       - name: Setup vcpkg environment
         uses: soumeh01/actions/vcpkg@testwindows
         with:
@@ -64,15 +49,13 @@ jobs:
           cache: "-"
 
       - name: Activate Arm tool license
-        working-directory: ./test
         run: |
           armlm activate --server https://mdk-preview.keil.arm.com --product KEMDK-COM0
-
-      # python -m robot --outputdir ../reports-${{ matrix.os }} -x junit-report.xml src
-      - name: Run Test
         working-directory: ./test
+
+      - name: Run Test
         run: |
-          python -m robot --outputdir ../reports-${{ matrix.target }}-${{ matrix.arch }} --settag ${{ matrix.target }}-${{ matrix.arch }} --name ${{ matrix.target }}-${{ matrix.arch }} ./src
+          python -m robot --outputdir reports-${{ matrix.target }}-${{ matrix.arch }} --settag ${{ matrix.target }}-${{ matrix.arch }} --name ${{ matrix.target }}-${{ matrix.arch }} ./test
 
       - name: Archieve test results
         if: always()
@@ -88,6 +71,17 @@ jobs:
     permissions: write-all
     steps:
     - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install pip dependencies
+      run: |
+          pip install --upgrade pip
+          pip install -r test/requirements.txt
 
     - name: Download reports windows amd64
       uses: actions/download-artifact@v4
@@ -126,13 +120,41 @@ jobs:
         path: reports-mac-arm64
 
     - name: Consolidate robot test results
+      continue-on-error: true
       run: |
-        python -m robot.rebot --name Collective_Robot_Results --outputdir Collective_Robot_Results \
+        python -m robot.rebot --name Collective_Robot_Results --outputdir Collective_Robot_Results --output output.xml \
           ./reports-win-amd64/output.xml ./reports-win-amd64/output.xml \
-          ./reports-ubuntu-arm64/output.xml ./reports-ubuntu-arm64/output.xml \
-          ./reports-macos-amd64/output.xml ./reports-macos-arm64/output.xml
+          ./reports-lin-arm64/output.xml ./reports-lin-arm64/output.xml \
+          ./reports-mac-amd64/output.xml ./reports-mac-arm64/output.xml
 
-    - name: Send macos report to commit
+    - name: Convert xml to junit xml
+      if: always()
+      run: |
+        python -m robot.rebot -x test_results_junit.xml Collective_Robot_Results/output.xml
+
+    - name: Publish Test Results
+      if: always()
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      with:
+        report_individual_runs: true
+        files: "test_results_junit.xml"
+
+    - name: HTML Preview
+      if: always()
+      id: html_preview
+      uses: pavi2410/html-preview-action@v2
+      with:
+        html_file: 'Collective_Robot_Results/log.html'
+
+    - name: Archieve consolidated test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: consolidated-reports
+        path: Collective_Robot_Results
+
+    - name: Send report to commit
+      if: always()
       uses: joonvena/robotframework-reporter-action@v2.4
       with:
         report_path: Collective_Robot_Results
