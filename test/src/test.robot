@@ -5,10 +5,9 @@ Resource                ${RESOURCES}/utils.resource
 Library                 Collections
 Library                 String
 Library                 ../lib/elf_compare.py 
-# Variables               TestExamples.yml
 Suite Setup             Global Setup
 Suite Teardown          Global Teardown
-Test Template           Run Example
+Test Template           Run CSolution Project
 
 *** Variables ***
 ${build-asm}                build-asm
@@ -50,78 +49,17 @@ Validate trustzone Example
      ${TEST_DATA_DIR}${/}${trustzone}${/}solution.csolution.yml    ${0}    ${trustzone}
 
 *** Keywords ***
-Run Example
+Run Csolution Project
     [Arguments]               ${input_file}      ${expect}    ${example_name}    ${args}=@{EMPTY}
-    ${rc_cbuildgen}=          Run cbuild With cbuildgen       ${input_file}    ${args}
-    ${rc_cbuild2cmake}=       Run cbuild with cbuild2cmake    ${input_file}    ${args}
-    Validate Build Status     ${rc_cbuildgen}    ${rc_cbuild2cmake}    ${expect}
-    Run Keyword If            ${rc_cbuildgen} == ${rc_cbuild2cmake} and ${rc_cbuildgen} == ${expect}    Compare Elf Information   ${input_file}    ${TEST_DATA_DIR}${/}${example_name}${/}out_dir/out     ${TEST_DATA_DIR}${/}${example_name}${/}out
-    # Validate Build Output     ${input_file}
-
-Run cbuild With cbuild2cmake
-    [Arguments]     ${input_file}    ${args}=@{EMPTY}
-    ${ex_args}=     Append Additional Arguments     ${args}    --cbuild2cmake
-    ${result}=      Run cbuild        ${input_file}      ${ex_args}
-    RETURN          ${result}
-
-Run cbuild with cbuildgen
-    [Arguments]    ${input_file}      ${example_name}    ${args}=@{EMPTY}
-    ${ex_args}=     Append Additional Arguments     ${args}    --output    ${TEST_DATA_DIR}${/}${example_name}${/}out_dir
-    ${result}=      Run cbuild        ${input_file}      ${ex_args}
-    RETURN          ${result}
-
-Validate Build Status
-    [Arguments]        ${rc_cbuildgen}        ${rc_cbuild2cmake}    ${rc_expected}
-    Should Be Equal    ${rc_cbuildgen}        ${rc_expected}
-    Should Be Equal    ${rc_cbuild2cmake}     ${rc_expected}
-
-Validate Build Output
-    [Arguments]                  ${input_file}
-    ${out_str}=    Get Contexts From Example    ${input_file}
-    ${lines}=    Split To Lines    ${out_str.stdout}
-    FOR    ${context}    IN    @{lines}
-    ${parts}=    Parse Context String    ${context}
-    Log    ${parts}
-    END
-
-Compare Object Sizes
-    [Arguments]                   ${cbuildgen_out_elf_file}    ${cbuild2cmake_out_elf_file}
-    ${cbuildgen_result}=          Get Information from elf File    ${cbuildgen_out_elf_file}
-    ${cbuild2cmake_result}=       Get Information from elf File    ${cbuild2cmake_out_elf_file}
-    Should Be Equal               ${cbuildgen_result.rc}         ${0}
-    Should Be Equal               ${cbuild2cmake_result.rc}      ${0}
-    Should Be Equal As Strings    ${cbuildgen_result.stdout}     ${cbuild2cmake_result.stdout}    msg=Object/Image Component Sizes are identical
-
-Append Additional Arguments
-    [Arguments]                  ${list}    @{values}
-    ${args}=    Combine Lists    ${list}    ${values}
-    RETURN                       ${args}
-
-
-Parse Context String
-    [Arguments]  ${input_string}
-    ${parts}     Split String    ${input_string}    .
-    RETURN       ${parts}
-
-*** Keywords ***
-Get Information from elf File
-    [Arguments]    ${elf_file}
-    ${result}      Run Process    fromelf    ${elf_file}    -z    shell=True
-    RETURN         ${result}
-
-Get Contexts From Example
-    [Arguments]    ${input_file}
-    ${result}      Run Process    cbuild    list    contexts    ${input_file}    shell=True
-    RETURN         ${result}
-
-Read Map File Section
-    [Arguments]    ${file_path}    ${section_name}
-    ${section}=    Evaluate    open('${file_path}').read().split('[${section_name}]', 1)[-1].split('[', 1)[0].strip()    BuiltIn
-    RETURN    ${section}
-
-Compare Sections
-    [Arguments]    ${section1}    ${section2}
-    Should Be Equal As Strings    ${section1}    ${section2}    msg=Sections are not identical
+    ${rc_cbuildgen}=          Run Project With cbuildgen       ${input_file}    ${args}
+    ${rc_cbuild2cmake}=       Run Project with cbuild2cmake    ${input_file}    ${args}
+    ${build_status}=          Validate Build Status     ${rc_cbuildgen}    ${rc_cbuild2cmake}    ${expect}
+    ${result}=    Run Keyword If    ${build_status} == ${True}
+    ...    Run Keyword And Return
+    ...    Compare Elf Information   ${input_file}
+    ...    ${TEST_DATA_DIR}${/}${example_name}${/}out_dir/out
+    ...     ${TEST_DATA_DIR}${/}${example_name}${/}out
+    Should Be True    ${result}
 
 
 

@@ -40,13 +40,13 @@ Remove Directory with Content
     Remove Directory                ${target_dir}      recursive=${True}
     Wait Until Removed              ${target_dir}      timeout=5 seconds
 
-Checkout GitHub Repository
-    [Documentation]                 Checkout github repository
-    [Arguments]                     ${github_repo_url}    ${dest_path}
-    ${result}=    Run Process       git    clone          ${github_repo_url}    ${dest_path}
-    Log                             ${result.stdout}
-    Log                             ${result.stderr}
-    Should Be Equal As Integers     ${result.rc}          ${0}
+# Checkout GitHub Repository
+#     [Documentation]                 Checkout github repository
+#     [Arguments]                     ${github_repo_url}    ${dest_path}
+#     ${result}=    Run Process       git    clone          ${github_repo_url}    ${dest_path}
+#     Log                             ${result.stdout}
+#     Log                             ${result.stderr}
+#     Should Be Equal As Integers     ${result.rc}          ${0}
 
 Global Setup
     [Documentation]                 Global test set up
@@ -60,8 +60,27 @@ Global Teardown
     [Documentation]                  Global tear down
     Remove Directory with Content    ${TEST_DATA_DIR}
 
-# Create TestParam
-#     [Documentation]                  Change directory permissions
-#     [Arguments]                      ${example}    ${input_file}    ${args}    ${expect}
-#     ${param}    Create Dictionary    Example=${example}    InFile=${input_file}    Args=${args}    Expect=${expect}
-#     RETURN    ${param}
+*** Keywords ***
+Run Project With cbuild2cmake
+    [Arguments]     ${input_file}    ${args}=@{EMPTY}
+    ${ex_args}=     Append Additional Arguments     ${args}    --cbuild2cmake
+    ${result}=      Run cbuild        ${input_file}      ${ex_args}
+    RETURN          ${result}
+
+Run Project with cbuildgen
+    [Arguments]    ${input_file}      ${example_name}    ${args}=@{EMPTY}
+    ${ex_args}=     Append Additional Arguments     ${args}    --output    ${TEST_DATA_DIR}${/}${example_name}${/}out_dir
+    ${result}=      Run cbuild        ${input_file}      ${ex_args}
+    RETURN          ${result}
+
+Validate Build Status
+    [Arguments]         ${rc_cbuildgen}        ${rc_cbuild2cmake}    ${rc_expected}
+    Should Be Equal     ${rc_cbuildgen}        ${rc_expected}        msg=Unexpected status returned by cbuildgen execution
+    Should Be Equal     ${rc_cbuild2cmake}     ${rc_expected}        msg=Unexpected status returned by cbuild2cmake execution
+    ${status_match}=    Evaluate    ${rc_cbuildgen} == ${rc_cbuild2cmake} and ${rc_cbuildgen} == ${rc_expected}
+    RETURN              ${status_match}
+
+Append Additional Arguments
+    [Arguments]                  ${list}    @{values}
+    ${args}=    Combine Lists    ${list}    ${values}
+    RETURN                       ${args}
