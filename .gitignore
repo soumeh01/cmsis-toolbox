@@ -1,1 +1,7 @@
-build
+# Directories
+/build*/
+**/build
+**/__pycache__
+
+# Files
+**/stdout.txt
