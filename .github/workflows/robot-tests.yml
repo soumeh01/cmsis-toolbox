@@ -1,0 +1,161 @@
+name: Robot Tests
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/robot-tests.yml'
+      - 'test/**'
+      - '!test/README.md'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    continue-on-error: true
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+        arch: [amd64, arm64]
+        include:
+          - os: windows-latest
+            target: win
+          - os: ubuntu-latest
+            target: lin
+          - os: macos-latest
+            target: mac
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install pip dependencies
+        run: |
+            pip install --upgrade pip
+            pip install -r test/requirements.txt
+
+      - name: Setup vcpkg environment
+        uses: soumeh01/actions/vcpkg@testwindows
+        with:
+          config: "./test/vcpkg-configuration.json"
+          vcpkg-root: "${{ github.workspace }}/.vcpkg"
+          cache: "-"
+
+      - name: Activate Arm tool license
+        run: |
+          armlm activate --server https://mdk-preview.keil.arm.com --product KEMDK-COM0
+        working-directory: ./test
+
+      - name: Run Test
+        run: |
+          python -m robot --outputdir reports-${{ matrix.target }}-${{ matrix.arch }} --settag ${{ matrix.target }}-${{ matrix.arch }} --name ${{ matrix.target }}-${{ matrix.arch }} ./test
+
+      - name: Archieve test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports-${{ matrix.target }}-${{ matrix.arch }}
+          path: reports-${{ matrix.target }}-${{ matrix.arch }}
+
+  report:
+    runs-on: ubuntu-latest
+    if: always()
+    needs: test
+    permissions: write-all
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install pip dependencies
+      run: |
+          pip install --upgrade pip
+          pip install -r test/requirements.txt
+
+    - name: Download reports windows amd64
+      uses: actions/download-artifact@v4
+      with:
+        name: reports-win-amd64
+        path: reports-win-amd64
+
+    - name: Download reports windows arm64
+      uses: actions/download-artifact@v4
+      with:
+        name: reports-win-arm64
+        path: reports-win-arm64
+
+    - name: Download reports linux amd64
+      uses: actions/download-artifact@v4
+      with:
+        name: reports-lin-amd64
+        path: reports-lin-amd64
+
+    - name: Download reports linux arm64
+      uses: actions/download-artifact@v4
+      with:
+        name: reports-lin-arm64
+        path: reports-lin-arm64
+
+    - name: Download reports darwin amd64
+      uses: actions/download-artifact@v4
+      with:
+        name: reports-mac-amd64
+        path: reports-mac-amd64
+
+    - name: Download reports darwin arm64
+      uses: actions/download-artifact@v4
+      with:
+        name: reports-mac-arm64
+        path: reports-mac-arm64
+
+    - name: Consolidate robot test results
+      continue-on-error: true
+      run: |
+        python -m robot.rebot --name Collective_Robot_Results --outputdir Collective_Robot_Results --output output.xml \
+          ./reports-win-amd64/output.xml ./reports-win-amd64/output.xml \
+          ./reports-lin-arm64/output.xml ./reports-lin-arm64/output.xml \
+          ./reports-mac-amd64/output.xml ./reports-mac-arm64/output.xml
+
+    - name: Convert xml to junit xml
+      if: always()
+      run: |
+        python -m robot.rebot -x test_results_junit.xml Collective_Robot_Results/output.xml
+
+    - name: Publish Test Results
+      if: always()
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      with:
+        report_individual_runs: true
+        files: "test_results_junit.xml"
+
+    - name: HTML Preview
+      if: always()
+      id: html_preview
+      uses: pavi2410/html-preview-action@v2
+      with:
+        html_file: 'Collective_Robot_Results/log.html'
+
+    - name: Archieve consolidated test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: consolidated-reports
+        path: Collective_Robot_Results
+
+    - name: Send report to commit
+      if: always()
+      uses: joonvena/robotframework-reporter-action@v2.4
+      with:
+        report_path: Collective_Robot_Results
+        gh_access_token: ${{ secrets.GITHUB_TOKEN }}
