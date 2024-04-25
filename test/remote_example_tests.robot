@@ -1,4 +1,5 @@
 *** Settings ***
+Documentation           Tests to compile & execute remote csolution examples
 Suite Setup             Global Setup
 Suite Teardown          Global Teardown
 Library                 lib${/}utils.py 
@@ -11,21 +12,31 @@ Test Template           Test github examples
 
 
 *** Variables ***
-${csolution-examples}       https://github.com/Open-CMSIS-Pack/csolution-examples.git
+${csolution-examples}       https://github.com/Open-CMSIS-Pack/csolution-examples
+${Hello_B-U585I-IOT02A}     https://github.com/Arm-Examples/Hello_B-U585I-IOT02A
+${Hello_FRDM-K32L3A6}       https://github.com/Arm-Examples/Hello_FRDM-K32L3A6
 
 
 *** Test Cases ***
-Test github example
-    ${csolution-examples}    ${Pass}
+# Test Csolution example
+#     ${csolution-examples}    ${Pass}
+
+# Test Hello_1 example
+#     ${Hello_B-U585I-IOT02A}    ${Pass}
+
+# Test Hello_2 example
+#     ${Hello_FRDM-K32L3A6}    ${Pass}
 
 *** Keywords ***
 Test github examples
-    [Arguments]                   ${github_url}        ${expect}    ${dest_dir_name}=${Remote_Example_Dir}
-    Checkout GitHub Repository    ${github_url}        ${TEST_DATA_DIR}${/}${dest_dir_name}
-    ${files}    Glob Files In Directory    ${test_data_dir}${/}${dest_dir_name}    *.csolution.yml    ${True}
+    [Arguments]    ${github_url}        ${expect}
+    ${dest_dir}=    Evaluate    "${github_url}".split('/')[-1]
+    ${dest_dir}=    Set Variable    ${TEST_DATA_DIR}${/}${Remote_Example_Dir}${/}${dest_dir}
+    Checkout GitHub Repository    ${github_url}    ${dest_dir}       
+    ${files}    Glob Files In Directory    ${dest_dir}    *.csolution.*    ${True}
     FOR    ${file}    IN    @{files}
         ${example_name}=    Get Parent Directory Name    ${file}
-        Run Keyword If    '${example_name}' == 'Hello'    
+        Run Keyword If    '${example_name}' != 'CubeMX'    
         ...    Run Csolution Project    ${file}    ${expect}
     END
 
