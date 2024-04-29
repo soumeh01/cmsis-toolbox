@@ -18,14 +18,14 @@ ${Hello_FRDM-K32L3A6}       https://github.com/Arm-Examples/Hello_FRDM-K32L3A6
 
 
 *** Test Cases ***
-# Test Csolution example
-#     ${csolution-examples}    ${Pass}
+Test Csolution example
+    ${csolution-examples}    ${Pass}
 
-# Test Hello_1 example
-#     ${Hello_B-U585I-IOT02A}    ${Pass}
+Test Hello_1 example
+    ${Hello_B-U585I-IOT02A}    ${Pass}
 
-# Test Hello_2 example
-#     ${Hello_FRDM-K32L3A6}    ${Pass}
+Test Hello_2 example
+    ${Hello_FRDM-K32L3A6}    ${Pass}
 
 *** Keywords ***
 Test github examples
