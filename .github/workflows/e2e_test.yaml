@@ -41,6 +41,30 @@ jobs:
             pip install --upgrade pip
             pip install -r test/requirements.txt
 
+# --------------------------------------------------------
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+          repository: Open-CMSIS-Pack/cbuild
+          path: cbuild
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# --------------------------------------------------------
       - name: Setup vcpkg environment
         uses: soumeh01/actions/vcpkg@testwindows
         with:

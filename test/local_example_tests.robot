@@ -34,7 +34,7 @@ Validate build-c Example
     ${TEST_DATA_DIR}${/}${build-c}${/}solution.csolution.yml    ${Pass}
 
 Validate build-cpp Example
-    ${TEST_DATA_DIR}${/}${build-cpp}${/}solution.csolution.yml    ${Pass}
+    ${TEST_DATA_DIR}${/}${build-cpp}${/}solution.csolution.yml    ${Pass}    -g    "Unix Makefiles"
 
 Validate include-define Example
     ${TEST_DATA_DIR}${/}${include-define}${/}solution.csolution.yml    ${Pass}
