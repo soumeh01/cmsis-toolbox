@@ -1,0 +1,143 @@
+name: Download Nightly Assets
+
+on:
+  # schedule:
+  #   - cron: '0 0 * * *' # Runs daily at midnight
+  workflow_dispatch: # Allows manual triggering of the workflow
+  pull_request:
+    paths:
+      - '.github/workflows/nightly.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+        
+jobs:
+  download-assets:
+    runs-on: ${{ matrix.os }}
+    continue-on-error: true
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-13]
+        arch: [amd64, arm64]
+        include:
+          - os: windows-latest
+            target: windows
+            extn: .exe
+          - os: ubuntu-latest
+            target: linux
+            extn:
+          - os: macos-13
+            target: darwin
+            extn:
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install pip dependencies
+        run: |
+            pip install --upgrade pip
+            pip install -r test/requirements.txt
+
+      - name: Setup vcpkg environment
+        uses: ARM-software/cmsis-actions/vcpkg@v1
+        with:
+          config: "./test/vcpkg-configuration.json"
+          vcpkg-downloads: "${{ github.workspace }}/.vcpkg/downloads"
+          cache: "-"
+
+      - name: Activate Arm tool license
+        run: |
+          armlm activate --server https://mdk-preview.keil.arm.com --product KEMDK-COM0
+        working-directory: ./test
+
+      - name: Authenticate with GitHub CLI
+        shell: bash
+        run: |
+          echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
+        # gh auth login --with-token < "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Get latest nightly projmgr artifacts
+        id: get_run_id
+        shell: bash
+        run: |
+          RUN_ID=$(gh run list --limit 1 --workflow nightly --repo Open-CMSIS-Pack/devtools --json databaseId --jq '.[0].databaseId')
+          echo "PROJMGR_LATEST_RUN_ID=$RUN_ID" >> $GITHUB_OUTPUT
+
+      - name: Download ProjMgr nightly artifacts
+        shell: bash
+        run : |
+          gh run download -D projmgr-${{ matrix.target }}-${{ matrix.arch }} ${{ steps.get_run_id.outputs.PROJMGR_LATEST_RUN_ID }} -n projmgr-${{ matrix.target }}-${{ matrix.arch }} -R Open-CMSIS-Pack/devtools
+
+      - name: List downloaded files
+        shell: bash
+        run: ls -l projmgr-${{ matrix.target }}-${{ matrix.arch }}
+
+      - name: csolution version before
+        shell: bash  
+        run: |
+            csolution -V
+
+      - name: Get binary path
+        shell: bash
+        run: |
+          CSOLUTION_PATH=$(which csolution)
+          BIN_DIR=$(dirname $CSOLUTION_PATH)
+          echo "$BIN_DIR"
+          cp ./projmgr-${{ matrix.target }}-${{ matrix.arch }}/csolution${{ matrix.extn }} $BIN_DIR/csolution${{ matrix.extn }}
+
+      - name: List downloaded files
+        shell: bash
+        run: |
+          CSOLUTION_PATH=$(which cbuild)
+          BIN_DIR=$(dirname $CSOLUTION_PATH)
+          ls -l $BIN_DIR
+
+      - name: csolution version after
+        shell: bash
+        run: |
+          csolution -V
+
+      - name: Run Test
+        shell: bash
+        run: |
+          python -m robot --outputdir reports-${{ matrix.target }}-${{ matrix.arch }} --settag ${{ matrix.target }}-${{ matrix.arch }} --name ${{ matrix.target }}-${{ matrix.arch }} ./test
+  
+      - name: Archieve test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports-${{ matrix.target }}-${{ matrix.arch }}
+          path: reports-${{ matrix.target }}-${{ matrix.arch }}
+
+      # - name: Set up environment variables
+      #   run: |
+      #     echo "REPO_OWNER=Open-CMSIS-Pack" >> $GITHUB_ENV
+      #     echo "REPO_NAME=devtools" >> $GITHUB_ENV
+      #     echo "TOKEN=${{ secrets.GITHUB_TOKEN }}" >> $GITHUB_ENV
+
+      # - name: Get latest release
+      #   id: get_latest
+      #   run: |
+      #     response=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+      #                     "https://api.github.com/repos/${{ env.REPO_OWNER }}/${{ env.REPO_NAME }}/releases/latest")
+      #     tag_name=$(echo "$response" | jq -r .tag_name)
+      #     asset_urls=$(echo "$response" | jq -r '.assets[].browser_download_url')
+
+      #     echo "TAG_NAME=$tag_name" >> $GITHUB_ENV
+      #     echo "ASSET_URLS=$asset_urls" >> $GITHUB_ENV
+
+      # - name: Download assets
+      #   run: |
+      #     mkdir -p nightly_assets
+      #     IFS=$'\n'
+      #     for url in ${{ env.ASSET_URLS }}; do
+      #       curl -L -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -o nightly_assets/$(basename $url) $url
+      #     done
+
