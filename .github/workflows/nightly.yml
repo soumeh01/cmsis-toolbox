@@ -85,6 +85,14 @@ jobs:
           path: cpackget
           fetch-depth: 0
 
+      - name: Install Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: cpackget/go.mod
+          cache-dependency-path: |
+            cpackget/go.mod
+            cpackget/go.sum
+
       - name: Build cpackget executable
         working-directory: cpackget
         shell: bash
@@ -99,6 +107,14 @@ jobs:
           path: cbuild2cmake
           fetch-depth: 0
 
+      - name: Install Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: cbuild2cmake/go.mod
+          cache-dependency-path: |
+            cbuild2cmake/go.mod
+            cbuild2cmake/go.sum
+
       - name: Build cbuild2cmake executable
         working-directory: cbuild2cmake
         shell: bash
@@ -112,7 +128,7 @@ jobs:
           gh run download -D projmgr-${{ matrix.target }}-${{ matrix.arch }} ${{ steps.get_run_id.outputs.NIGHTLY_RUN_ID }} -n projmgr-${{ matrix.target }}-${{ matrix.arch }} -R Open-CMSIS-Pack/devtools
           gh run download -D cbuildgen-${{ matrix.target }}-${{ matrix.arch }} ${{ steps.get_run_id.outputs.NIGHTLY_RUN_ID }} -n cbuildgen-${{ matrix.target }}-${{ matrix.arch }} -R Open-CMSIS-Pack/devtools
 
-      - name: Checkout toolbox repo
+      - name: Checkout cmsis-toolbox repo
         uses: actions/checkout@v4
         with:
           repository: Open-CMSIS-PACK/devtools
@@ -217,15 +233,12 @@ jobs:
         if: always()
         shell: bash
         run: |
-          ls -l ${{steps.toolbox_path.outputs.path}}
           export PATH="${{steps.toolbox_path.outputs.path}}:$PATH"
-          echo "${{steps.toolbox_path.outputs.path}}"
           csolution -V
           cpackget -V
           cbuild -V
           cbuild2cmake -V
           cbuildgen -V
-          which csolution
 
       - name: Run Test
         shell: bash
@@ -234,7 +247,7 @@ jobs:
           which cbuild
           ls -l ${{steps.toolbox_path.outputs.path}}
           ${{steps.toolbox_path.outputs.path}}/cbuild -V
-          python -m robot --outputdir reports-${{ matrix.target }}-${{ matrix.arch }} --settag ${{ matrix.target }}-${{ matrix.arch }} --name ${{ matrix.target }}-${{ matrix.arch }} ./test
+          python -m robot --outputdir reports-${{ matrix.target }}-${{ matrix.arch }} --variable TEST_ENV_FILE:test-env-${{ matrix.target }}-${{ matrix.arch }}.md --consolewidth=150 --settag ${{ matrix.target }}-${{ matrix.arch }} --name ${{ matrix.target }}-${{ matrix.arch }} ./test
 
       - name: Archieve test results
         if: always()
@@ -273,12 +286,13 @@ jobs:
       run: |
         python -m robot.rebot --name Collective_Robot_Results --outputdir collective_robot_results --output output.xml \
           ./reports-windows-amd64/output.xml \
-          ./reports-linux-amd64/output.xml
+          ./reports-linux-amd64/output.xml \
+          ./reports-darwin-amd64/output.xml
 
     - name: Generate Summary report
       if: always()
       run: |
-        python ./test/lib/execution_summary.py artifacts/collective_robot_results/output.xml
+        python ./test/lib/execution_summary.py artifacts artifacts/collective_robot_results/output.xml summary_report.md
 
     - name: Print E2E Report
       if: always()
