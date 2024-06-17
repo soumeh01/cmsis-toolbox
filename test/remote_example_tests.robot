@@ -5,7 +5,8 @@ Suite Teardown          Global Teardown
 Library                 lib${/}utils.py 
 Library                 String
 Library                 Collections
-Library                 lib${/}elf_compare.py 
+Library                 lib${/}elf_compare.py
+Library                 DataDriver
 Resource                resources${/}global.resource
 Resource                resources${/}utils.resource
 Test Template           Test github examples
@@ -18,6 +19,7 @@ ${Hello_FRDM-K32L3A6}       https://github.com/Arm-Examples/Hello_FRDM-K32L3A6
 
 
 *** Test Cases ***
+Test remote example ${github_url} and expect ${expect}    Default    UserData
 # Test Csolution example
 #     ${csolution-examples}    ${Pass}
 
@@ -29,15 +31,14 @@ ${Hello_FRDM-K32L3A6}       https://github.com/Arm-Examples/Hello_FRDM-K32L3A6
 
 *** Keywords ***
 Test github examples
-    [Arguments]    ${github_url}        ${expect}
-    ${dest_dir}=    Evaluate    "${github_url}".split('/')[-1]
-    ${dest_dir}=    Set Variable    ${TEST_DATA_DIR}${/}${Remote_Example_Dir}${/}${dest_dir}
-    Checkout GitHub Repository    ${github_url}    ${dest_dir}       
+    [Arguments]     ${github_url}        ${expect}
+    ${dest_dir}=    Evaluate             "${github_url}".split('/')[-1]
+    ${dest_dir}=    Set Variable         ${TEST_DATA_DIR}${/}${Remote_Example_Dir}${/}${dest_dir}
+    Checkout GitHub Repository           ${github_url}    ${dest_dir}       
     ${files}    Glob Files In Directory    ${dest_dir}    *.csolution.*    ${True}
     FOR    ${file}    IN    @{files}
         ${example_name}=    Get Parent Directory Name    ${file}
-        Run Keyword If    '${example_name}' != 'CubeMX'    
-        ...    Run Csolution Project    ${file}    ${expect}
+        Run Csolution Project    ${file}    ${expect}
     END
 
 Run Csolution Project
