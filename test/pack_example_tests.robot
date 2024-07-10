@@ -7,24 +7,24 @@ Library                 String
 Library                 Collections
 Library                 lib${/}elf_compare.py
 Library                 DataDriver
+Library                 OperatingSystem
 Resource                resources${/}global.resource
 Resource                resources${/}utils.resource
-Test Template           Test github examples
+Test Template           Test packs examples
 
 
 *** Test Cases ***
-Test remote example ${github_url} and expect ${expect}    Default    UserData
+Test pack example ${pack_id} and expect ${expect}    Default    UserData
 
 *** Keywords ***
-Test github examples
-    [Arguments]     ${github_url}        ${expect}
-    ${dest_dir}=    Get Destination Path    ${github_url}
-    # ${dest_dir}=    Evaluate             "${github_url}".split('/')[-1]
-    # ${dest_dir}=    Set Variable         ${TEST_DATA_DIR}${/}${Remote_Example_Dir}${/}${dest_dir}
-    Checkout GitHub Repository           ${github_url}    ${dest_dir}       
-    ${files}    Glob Files In Directory    ${dest_dir}    *.csolution.*    ${True}
+Test packs examples
+    [Arguments]     ${pack_id}        ${expect}
+    ${pack_root_dir}=        Set Variable    ${TEST_DATA_DIR}${/}${Local_Pack_Root_Dir}${/}
+    Create Directory         ${pack_root_dir}
+    Cpackget Init            ${pack_root_dir}
+    Cpackget Install Pack    ${pack_id}    ${pack_root_dir}
+    ${files}    Glob Files In Directory    ${pack_root_dir}    *.csolution.*    ${True}
     FOR    ${file}    IN    @{files}
-        # ${example_name}=    Get Parent Directory Name    ${file}
         Run Csolution Project    ${file}    ${expect}
     END
 
