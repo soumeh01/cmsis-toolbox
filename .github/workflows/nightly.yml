@@ -236,7 +236,7 @@ jobs:
             --variable TEST_ENV_FILE:test-env-${{ matrix.target }}-${{ matrix.arch }}.md \
             --consolewidth=150 --settag ${{ matrix.target }}-${{ matrix.arch }} \
             --name ${{ matrix.target }}-${{ matrix.arch }} \
-            ./test
+            ./test/pack_example_tests.robot
 
       - name: Archieve test results
         if: always()

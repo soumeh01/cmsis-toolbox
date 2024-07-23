@@ -3,23 +3,25 @@ Documentation    A collection of commonly used keywords across multiple test sui
 Library          BuiltIn
 Library          Collections
 Library          Process
+Library                 String
 Library          OperatingSystem
 Library          ..${/}lib${/}utils.py
 Resource         global.resource
 
 *** Variables ***
 ${TEST_ENV_FILE}    test_env.md
+${RESULT}           ${EMPTY}
 
 *** Keywords ***
 Global Setup
-    ${parent_dir}=                    Join Path           ${CURDIR}        ..
-    ${src_dir}=                       Join Path           ${parent_dir}    ${Data}
+    ${parent_dir}=                    Join And Normalize Path    ${CURDIR}        ..
+    ${src_dir}=                       Join And Normalize Path    ${parent_dir}    ${Data}
     ${dest_dir}=                      Get Test Data Directory
     Set Global Variable               ${TEST_DATA_DIR}    ${dest_dir}
     Copy Directory                    ${src_dir}          ${dest_dir}
     ${output_file_path}               Get Output File Path
     ${parent_path}=                   Get Parent Directory Path    ${output_file_path}
-    ${test_env_file}=    Join Path    ${parent_path}    ${TEST_ENV_FILE}
+    ${test_env_file}=    Join And Normalize Path    ${parent_path}    ${TEST_ENV_FILE}
     Write Test Environment            ${test_env_file} 
 
 Global Teardown
@@ -27,24 +29,60 @@ Global Teardown
 
 Get Test Data Directory
     [Documentation]      Retrieve the directory path for test input data
-    ${parent_dir}=       Join Path           ${CURDIR}        ..
-    ${test_data_dir}=    Join Path           ${parent_dir}    ${Build}
+    ${parent_dir}=       Join And Normalize Path    ${CURDIR}        ..
+    ${test_data_dir}=    Join And Normalize Path    ${parent_dir}    ${Build}
     RETURN               ${test_data_dir}
 
-Run Program
+Run Program1
     [Documentation]             Run specified executable with arguments
-    [Arguments]                 ${exe_path}      ${input_File}    @{args}
-    ${result}    Run Process    ${exe_path}      ${input_File}    @{args}
+    [Arguments]                 ${exe_path}      ${command}
+    ${result}        Run Process    ${exe_path}      ${command}
     ...    shell=True    stdout=${CURDIR}/stdout.txt
     ${ret_code}=                Set Variable If    ${result.rc} == ${0}    ${result.rc}    ${1}
     Log Output String           ${result.stdout}
     RETURN                      ${ret_code}
 
+Run Program
+    [Documentation]             Run specified executable with arguments
+    [Arguments]                 ${exe_path}      ${command}    ${input_File}    @{args}
+    ${result}    Run Process    ${exe_path}      ${command}    ${input_File}    @{args}
+    ...    shell=True    stdout=${CURDIR}/stdout.txt
+    ${ret_code}=                Set Variable If    ${result.rc} == ${0}    ${result.rc}    ${1}
+    Log Output String           ${result.stdout}
+    RETURN
+
+Run Program2
+    [Documentation]             Run specified executable with arguments
+    [Arguments]                 ${exe_path}      ${input_File}    @{args}
+    Log Many        ${exe_path}
+    Log Many        ${input_file}
+    Log Many        ${args}
+    ${result}    Run Process    ${exe_path}      ${input_File}    @{args}
+    ...    shell=True    stdout=${CURDIR}/stdout.txt
+    ${ret_code}=                Set Variable If    ${result.rc} == ${0}    ${result.rc}    ${1}
+    Log Output String           ${result.stdout}
+    RETURN
+
+# Run cbuild
+#     [Documentation]                Run cbuild with specified arguments
+#     [Arguments]                    ${cmdline_args}=@{EMPTY}
+#     Append To List                 ${cmdline_args}    -p    -r    --update-rte
+#     Log Many                       ${cmdline_args}
+#     ${str_args}=     Convert List To Single String    ${cmdline_args}
+#     Log Many                       ${str_args}
+#     ${ret_code}=    Run Program    cbuild    ${str_args}
+#     RETURN                         ${ret_code}
+
 Run cbuild
     [Documentation]                Run cbuild with specified arguments
-    [Arguments]                    ${input_file}    ${args}=@{EMPTY}
+    [Arguments]                    ${input_file}    ${command}    ${args}=@{EMPTY}
     Append To List                 ${args}    -p    -r    --update-rte
-    ${ret_code}=    Run Program    cbuild    ${input_file}    @{args}
+    Log Many        ${command}
+    Log Many        ${input_file}
+    Log Many        ${args}
+    ${ret_code}=    Run Keyword If    '${command}' == '${EMPTY}'    Run Program2    cbuild    ${input_file}    @{args}
+    ...    ELSE    Run Program    cbuild    ${command}    ${input_file}    @{args}
+    # ${ret_code}=    Run Program    cbuild    ${command}    ${input_file}    @{args}
     RETURN                         ${ret_code}
 
 Change Directory Permissions
@@ -56,6 +94,7 @@ Change Directory Permissions
 Remove Directory with Content
     [Documentation]                 Remove directory and its content from target directory
     [Arguments]                     ${target_dir}
+    ${target_dir}=    Normalize Path    ${target_dir}
     Change Directory Permissions    ${target_dir}
     Remove Directory                ${target_dir}      recursive=${True}
     Wait Until Removed              ${target_dir}      timeout=5 seconds
@@ -72,15 +111,18 @@ Run Project with cbuildgen
     [Documentation]     Run the csolution project with cbuildgen
     [Arguments]         ${input_file}    ${expect}        ${args}=@{EMPTY}
     ${parent_path}=     Get Parent Directory Path         ${input_file}
-    ${ex_args}=         Append Additional Arguments       ${args}    --output    ${parent_path}${/}${Out_Dir}    --cbuildgen
-    ${ret_code}=        Run cbuild       ${input_file}    ${ex_args}
+    ${output_dir}=    Normalize Path    ${parent_path}${/}${Out_Dir}
+    Append To List      ${args}    --output    ${output_dir}    --cbuildgen
+    # ${args}=    Insert At Front     ${args}    ${input_file}
+    ${ret_code}=        Run cbuild       ${input_file}    ${EMPTY}    ${args}
     Should Be Equal     ${ret_code}      ${expect}        msg=Unexpected status returned by cbuildgen execution
 
 Run Project With cbuild2cmake
     [Documentation]     Run the csolution project with cbuild2cmake
     [Arguments]         ${input_file}     ${expect}        ${args}=@{EMPTY}
-    ${ex_args}=         Append Additional Arguments        ${args}    --cbuild2cmake
-    ${ret_code}=        Run cbuild        ${input_file}    ${ex_args}
+    Append To List        ${args}    --cbuild2cmake
+    ${args}=    Insert At Front     ${args}    ${input_file}
+    ${ret_code}=        Run cbuild        ${input_file}    ${empty}    ${args}
     Should Be Equal     ${ret_code}       ${expect}        msg=Unexpected status returned by cbuild2cmake execution
 
 Append Additional Arguments
@@ -118,3 +160,32 @@ Cpackget Install Pack
     ...    -R    ${pack_root_dir}
     ...    --agree-embedded-license    --force-reinstall
     RETURN              ${ret_code}
+
+Get Contexts From Project
+    [Documentation]     Run the csolution project with cbuildgen
+    [Arguments]         ${input_file}    ${expect}        ${args}=@{EMPTY}
+    ${parent_path}=     Get Parent Directory Path         ${input_file}
+    ${result}    Run Process    csolution     list    contexts    ${input_File}
+    ...    -q    shell=True    stdout=${CURDIR}/stdout.txt
+    ${ret_code}=        Set Variable If    ${result.rc} == ${0}    ${result.rc}    ${1}
+    Should Be Equal     ${ret_code}      ${expect}        msg=Unexpected status returned by list context command
+    RETURN              ${result.stdout}
+
+Convert List To Single String
+    [Arguments]    ${LIST}
+    ${RESULT}=    Set Variable    ${EMPTY}
+    FOR    ${element}    IN    @{LIST}
+        ${RESULT}=    Evaluate    ${element} ${RESULT}
+    END
+    RETURN    ${RESULT}
+
+Join And Normalize Path
+    [Arguments]        ${prefixPath}    ${suffixPath}
+    ${resultPath}=     Join Path      ${prefixPath}    ${suffixPath}
+    ${resultPath}=     Normalize Path    ${resultPath}
+    RETURN             ${resultPath}
+
+Normalize Path
+    [Arguments]        ${Path}
+    ${resultPath}=     Replace String    ${Path}    \\    /
+    RETURN             ${resultPath}
