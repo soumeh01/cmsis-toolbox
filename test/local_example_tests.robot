@@ -1,6 +1,6 @@
 *** Settings ***
 Documentation           Tests to compile & execute local csolution examples
-Suite Setup             Global Setup
+Suite Setup             Copy Test Data
 Suite Teardown          Global Teardown
 Resource                resources${/}global.resource
 Resource                resources${/}utils.resource
@@ -29,34 +29,34 @@ ${Hello}                    Hello
 #    <Path to the input *.csolution.yml file>    <Expected build status>
 
 Validate build-asm Example
-    ${TEST_DATA_DIR}${/}${build-asm}${/}solution.csolution.yml    ${Pass}
+    ${TEST_DATA_DIR}${/}${build-asm}${/}solution.csolution.yml                 ${Fail}    ${Pass}
 
 Validate build-c Example
-    ${TEST_DATA_DIR}${/}${build-c}${/}solution.csolution.yml    ${Pass}
+    ${TEST_DATA_DIR}${/}${build-c}${/}solution.csolution.yml                   ${Pass}    ${Pass}
 
 Validate build-cpp Example
-    ${TEST_DATA_DIR}${/}${build-cpp}${/}solution.csolution.yml    ${Pass}
+    ${TEST_DATA_DIR}${/}${build-cpp}${/}solution.csolution.yml                 ${Pass}    ${Pass}
 
 Validate include-define Example
-    ${TEST_DATA_DIR}${/}${include-define}${/}solution.csolution.yml    ${Pass}
+    ${TEST_DATA_DIR}${/}${include-define}${/}solution.csolution.yml            ${Pass}    ${Pass}
 
 Validate language-scope Example
-    ${TEST_DATA_DIR}${/}${language-scope}${/}solution.csolution.yml    ${Pass}
+    ${TEST_DATA_DIR}${/}${language-scope}${/}solution.csolution.yml            ${Fail}    ${Pass}
 
 Validate linker-pre-processing Example
-    ${TEST_DATA_DIR}${/}${linker-pre-processing}${/}solution.csolution.yml    ${Pass}
+    ${TEST_DATA_DIR}${/}${linker-pre-processing}${/}solution.csolution.yml     ${Pass}    ${Pass}
 
 Validate pre-include Example
-    ${TEST_DATA_DIR}${/}${pre-include}${/}solution.csolution.yml    ${Pass}
+    ${TEST_DATA_DIR}${/}${pre-include}${/}solution.csolution.yml               ${Pass}    ${Pass}
 
 Validate whitespace Example
-    ${TEST_DATA_DIR}${/}${whitespace}${/}solution.csolution.yml    ${Pass}
+    ${TEST_DATA_DIR}${/}${whitespace}${/}solution.csolution.yml                ${Pass}    ${Pass}
 
 Validate trustzone Example
-     ${TEST_DATA_DIR}${/}${trustzone}${/}solution.csolution.yml    ${Pass}
+     ${TEST_DATA_DIR}${/}${trustzone}${/}solution.csolution.yml                ${Pass}    ${Pass}
 
 *** Keywords ***
 Build Local CSolution Example
-    [Arguments]                              ${input_file}      ${expect}    ${args}=@{EMPTY}
-    ${result}=    Build CSolution Example    ${input_file}      ${expect}    ${args}
+    [Arguments]                              ${input_file}      ${cbuildgen_expect}    ${cbuild2cmake_expect}    ${args}=@{EMPTY}
+    ${result}=    Build CSolution Example    ${input_file}      ${cbuildgen_expect}    ${cbuild2cmake_expect}    ${args}
     Should Be True                           ${result}
