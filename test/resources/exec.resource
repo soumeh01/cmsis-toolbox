@@ -74,8 +74,8 @@ Get Contexts From Project
 
 Build CSolution Example
     [Arguments]                        ${input_file}    ${cbuildgen_expect}    ${cbuild2cmake_expect}    ${args}=@{EMPTY}
-    Build Example With cbuild2cmake    ${input_file}    ${cbuild2cmake_expect}    ${args}
-    Build Example With cbuildgen       ${input_file}    ${cbuildgen_expect}    ${args}
+    Build Example With cbuild2cmake    ${input_file}    ${cbuild2cmake_expect}     ${args}
+    Build Example With cbuildgen       ${input_file}    ${cbuildgen_expect}        ${args}
 
     ${res_cbuild2cmake}=       Run Keyword And Ignore Error    Build Example With cbuild2cmake    ${input_file}    ${cbuild2cmake_expect}    ${args}
     ${res_cbuildgen}=          Run Keyword And Ignore Error    Build Example With cbuildgen       ${input_file}    ${cbuildgen_expect}    ${args}
