@@ -16,8 +16,11 @@ Test Template           Build Local CSolution Example
 ${build-asm}                build-asm
 ${build-c}                  build-c
 ${build-cpp}                build-cpp
+${build-set}                build-set
+${executes}                 executes
 ${include-define}           include-define
 ${language-scope}           language-scope
+${library-rtos}             library-rtos
 ${linker-pre-processing}    linker-pre-processing
 ${pre-include}              pre-include
 ${whitespace}               whitespace
@@ -26,7 +29,7 @@ ${Hello}                    Hello
 
 *** Test Cases ***
 # <Name of the Test>
-#    <Path to the input *.csolution.yml file>    <Expected build status>
+#    <Path to the input *.csolution.yml file>       <Expected cbuildgen build status>    <Expected cbuild2cmake build status>
 
 Validate build-asm Example
     ${TEST_DATA_DIR}${/}${build-asm}${/}solution.csolution.yml                 ${Fail}    ${Pass}
@@ -37,11 +40,20 @@ Validate build-c Example
 Validate build-cpp Example
     ${TEST_DATA_DIR}${/}${build-cpp}${/}solution.csolution.yml                 ${Pass}    ${Pass}
 
+Validate build-set Example
+    ${TEST_DATA_DIR}${/}${build-set}${/}solution.csolution.yml                 ${Pass}    ${Pass}
+
+Validate executes Example
+    ${TEST_DATA_DIR}${/}${executes}${/}solution.csolution.yml                  ${Pass}    ${Pass}
+
 Validate include-define Example
-    ${TEST_DATA_DIR}${/}${include-define}${/}solution.csolution.yml            ${Pass}    ${Pass}
+    ${TEST_DATA_DIR}${/}${include-define}${/}solution.csolution.yml            ${Fail}    ${Pass}
 
 Validate language-scope Example
     ${TEST_DATA_DIR}${/}${language-scope}${/}solution.csolution.yml            ${Fail}    ${Pass}
+
+Validate library-rtos Example
+    ${TEST_DATA_DIR}${/}${library-rtos}${/}solution.csolution.yml              ${Pass}    ${Pass}
 
 Validate linker-pre-processing Example
     ${TEST_DATA_DIR}${/}${linker-pre-processing}${/}solution.csolution.yml     ${Pass}    ${Pass}

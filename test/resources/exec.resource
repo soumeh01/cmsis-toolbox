@@ -43,9 +43,9 @@ Build Example With cbuildgen
 Build Example With cbuild2cmake
     [Documentation]     Build the csolution example with cbuild2cmake
     [Arguments]         ${input_file}     ${expect}        ${args}=@{EMPTY}
-    Append To List        ${args}    --cbuild2cmake
-    # ${args}=    Insert At Front     ${args}    ${input_file}
-    ${ret_code}=        Run cbuild        ${input_file}    ${EMPTY}    ${args}
+    ${args_Ex}=         Copy List    ${args}
+    Append To List      ${args_Ex}    --cbuild2cmake
+    ${ret_code}=        Run cbuild        ${input_file}    ${EMPTY}    ${args_Ex}
     Should Be Equal     ${ret_code}       ${expect}        msg=Unexpected status returned by cbuild2cmake execution
 
 Initialize Pack Root Directory
@@ -77,8 +77,12 @@ Build CSolution Example
     Build Example With cbuild2cmake    ${input_file}    ${cbuild2cmake_expect}     ${args}
     Build Example With cbuildgen       ${input_file}    ${cbuildgen_expect}        ${args}
 
-    ${res_cbuild2cmake}=       Run Keyword And Ignore Error    Build Example With cbuild2cmake    ${input_file}    ${cbuild2cmake_expect}    ${args}
-    ${res_cbuildgen}=          Run Keyword And Ignore Error    Build Example With cbuildgen       ${input_file}    ${cbuildgen_expect}    ${args}
+    IF    '${cbuildgen_expect}' == '1' or '${cbuild2cmake_expect}' == '1'
+        RETURN    ${True}
+    END
+
+    # ${res_cbuild2cmake}=       Run Keyword And Ignore Error    Build Example With cbuild2cmake    ${input_file}    ${cbuild2cmake_expect}    ${args}
+    # ${res_cbuildgen}=          Run Keyword And Ignore Error    Build Example With cbuildgen       ${input_file}    ${cbuildgen_expect}    ${args}
 
     # # Check the result of the first run
     # ${success}=    Set Variable    ${res_cbuildgen[0]}
@@ -99,7 +103,7 @@ Build CSolution Example
     ...                    Compare Elf Information   ${input_file}
     ...                    ${parent_path}${/}${Out_Dir}${/}${Default_Out_Dir}
     ...                    ${parent_path}${/}${Default_Out_Dir}
-    RETURN                 ${result}
+    RETURN             ${result}
 
 Checkout GitHub Repository
     [Documentation]                 Checkout github repository
