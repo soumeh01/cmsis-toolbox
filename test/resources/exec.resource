@@ -28,7 +28,7 @@ Run cbuild
     ${is_command_empty}=           Evaluate    '${command}' == '${EMPTY}'
     ${ret_code}=    Run Keyword If    ${is_command_empty}    Run Program    cbuild    ${input_file}    @{args}
     ...    ELSE    Run Program    cbuild    ${input_file}    @{args}    ${command}
-    RETURN          ${ret_code}
+    RETURN                         ${ret_code}
 
 Build Example With cbuildgen
     [Documentation]     Build csolution example with cbuildgen
@@ -38,15 +38,15 @@ Build Example With cbuildgen
     ${args_Ex}=         Copy List    ${args}
     Append To List      ${args_Ex}    --output    ${output_dir}    --cbuildgen
     ${ret_code}=        Run cbuild       ${input_file}    ${EMPTY}    ${args_Ex}
-    Should Be Equal     ${ret_code}      ${expect}        msg=Unexpected status returned by cbuildgen execution
+    Should Be Equal     ${ret_code}      ${expect}        msg=Unexpected status returned when building with cbuildgen
 
 Build Example With cbuild2cmake
     [Documentation]     Build the csolution example with cbuild2cmake
     [Arguments]         ${input_file}     ${expect}        ${args}=@{EMPTY}
-    ${args_Ex}=         Copy List    ${args}
-    Append To List      ${args_Ex}    --cbuild2cmake
+    ${args_Ex}=         Copy List         ${args}
+    Append To List      ${args_Ex}        --cbuild2cmake
     ${ret_code}=        Run cbuild        ${input_file}    ${EMPTY}    ${args_Ex}
-    Should Be Equal     ${ret_code}       ${expect}        msg=Unexpected status returned by cbuild2cmake execution
+    Should Be Equal     ${ret_code}       ${expect}        msg=Unexpected status returned when building with cbuild2cmake
 
 Initialize Pack Root Directory
     [Documentation]     Initialize pack root directory
@@ -77,6 +77,7 @@ Build CSolution Example
     Build Example With cbuild2cmake    ${input_file}    ${cbuild2cmake_expect}     ${args}
     Build Example With cbuildgen       ${input_file}    ${cbuildgen_expect}        ${args}
 
+    # If any of the expectations is failure, there's no need to compare ELF information 
     IF    '${cbuildgen_expect}' == '1' or '${cbuild2cmake_expect}' == '1'
         RETURN    ${True}
     END

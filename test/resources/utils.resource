@@ -16,8 +16,8 @@ ${TEST_ENV_FILE}    test_env.md
 Create Test Data Directory
     [Documentation]      Create test data directory
     # Set the global variable for test data directory
-    ${dest_dir}=                      Get Test Data Directory
-    Set Global Variable               ${TEST_DATA_DIR}           ${dest_dir}
+    ${dest_dir}=                    Get Test Data Directory
+    Set Global Variable             ${TEST_DATA_DIR}    ${dest_dir}
     # Remove previous test data
     Run Keyword And Ignore Error    Remove Directory with Content    ${TEST_DATA_DIR}
 
