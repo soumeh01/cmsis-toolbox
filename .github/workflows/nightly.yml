@@ -43,6 +43,8 @@ jobs:
       matrix: ${{ fromJson(needs.matrix_prep.outputs.matrix) }}
 
     steps:
+      - uses: actions/checkout@v4
+
       - name: Authenticate with GitHub CLI
         shell: bash
         run: |
@@ -129,13 +131,13 @@ jobs:
           path: cbridge
           fetch-depth: 0
 
-      # - name: Install Go
-        # uses: actions/setup-go@v5
-        # with:
-          # go-version-file: generator-bridge/go.mod
-          # cache-dependency-path: |
-            # **/go.mod
-            # **/go.sum
+      - name: Install Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: cbridge/go.mod
+          cache-dependency-path: |
+            **/go.mod
+            **/go.sum
 
       - name: Build cbridge executable
         working-directory: cbridge
@@ -152,7 +154,22 @@ jobs:
           gh run download -D packchk-${{ matrix.target }}-${{ matrix.arch }} ${{ steps.get_run_id.outputs.NIGHTLY_RUN_ID }} -n packchk-${{ matrix.target }}-${{ matrix.arch }} -R Open-CMSIS-Pack/devtools
           gh run download -D svdconv-${{ matrix.target }}-${{ matrix.arch }} ${{ steps.get_run_id.outputs.NIGHTLY_RUN_ID }} -n svdconv-${{ matrix.target }}-${{ matrix.arch }} -R Open-CMSIS-Pack/devtools
 
-      - name: Checkout cmsis-toolbox repo
+      - name: Unzip files
+        shell: bash
+        run: |
+          mkdir -p packchk
+          mkdir -p svdconv
+          packchk_dir="packchk-${{ matrix.target }}-${{ matrix.arch }}"
+          svdconv_dir="svdconv-${{ matrix.target }}-${{ matrix.arch }}"         
+          if [[ "$RUNNER_OS" == "Linux" || "$RUNNER_OS" == "macOS" ]]; then
+            tar -xvf ${packchk_dir}/packchk-*-${{ matrix.target }}-${{ matrix.arch }}.tbz2 -C packchk
+            tar -xvf ${svdconv_dir}/svdconv-*-${{ matrix.target }}-${{ matrix.arch }}.tbz2 -C svdconv
+          elif [[ "$RUNNER_OS" == "Windows" ]]; then
+            unzip ${packchk_dir}/packchk-\*-${{ matrix.target }}-${{ matrix.arch }}.zip -d packchk
+            unzip ${svdconv_dir}/svdconv-\*-${{ matrix.target }}-${{ matrix.arch }}.zip -d svdconv
+          fi
+
+      - name: Checkout Open-CMSIS-PACK/devtools repo
         uses: actions/checkout@v4
         with:
           repository: Open-CMSIS-PACK/devtools
@@ -163,10 +180,11 @@ jobs:
         run: |
           mkdir -p ./cmsis-toolbox/bin
           mkdir -p ./cmsis-toolbox/etc
+          mkdir -p ./cmsis-toolbox/doc
           cp ./projmgr-${{ matrix.target }}-${{ matrix.arch }}/csolution${{ matrix.binary_extension }}      ./cmsis-toolbox/bin/csolution${{ matrix.binary_extension }}
-          cp ./cbuildgen-${{ matrix.target }}-${{ matrix.arch }}/cbuildgen${{ matrix.binary_extension }}    ./cmsis-toolbox/bin/cbuildgen${{ matrix.binary_extension }}
-          cp ./packchk-${{ matrix.target }}-${{ matrix.arch }}/*/packchk${{ matrix.binary_extension }}      ./cmsis-toolbox/bin/packchk${{ matrix.binary_extension }}
-          cp ./svdconv-${{ matrix.target }}-${{ matrix.arch }}/*/svdconv${{ matrix.binary_extension }}      ./cmsis-toolbox/bin/svdconv${{ matrix.binary_extension }}
+          cp ./cbuildgen-${{ matrix.target }}-${{ matrix.arch }}/cbuildgen${{ matrix.binary_extension }}*   ./cmsis-toolbox/bin/cbuildgen${{ matrix.binary_extension }}
+          cp ./packchk/packchk${{ matrix.binary_extension }}                                                ./cmsis-toolbox/bin/packchk${{ matrix.binary_extension }}
+          cp ./svdconv/svdconv${{ matrix.binary_extension }}                                                ./cmsis-toolbox/bin/svdconv${{ matrix.binary_extension }}
           cp ./cbuild/build/cbuild${{ matrix.binary_extension }}                                            ./cmsis-toolbox/bin/cbuild${{ matrix.binary_extension }}
           cp ./cpackget/build/cpackget${{ matrix.binary_extension }}                                        ./cmsis-toolbox/bin/cpackget${{ matrix.binary_extension }}
           cp ./cbuild2cmake/build/cbuild2cmake${{ matrix.binary_extension }}                                ./cmsis-toolbox/bin/cbuild2cmake${{ matrix.binary_extension }}
@@ -176,6 +194,9 @@ jobs:
           cp -r devtools/tools/projmgr/schemas/*                  ./cmsis-toolbox/etc
           cp -r devtools/tools/buildmgr/cbuildgen/scripts/*       ./cmsis-toolbox/etc
           cp -r devtools/tools/buildmgr/cbuildgen/config/*        ./cmsis-toolbox/etc
+          cp ./docs/LICENSE.txt ./cmsis-toolbox
+          cp ./docs/index.html ./cmsis-toolbox/doc
+          touch ./cmsis-toolbox/cmsis-toolbox-${{ matrix.target }}-${{ matrix.arch }}-$(date '+%Y-%m-%d_%H-%M-%S')
 
       - name: Update toolchain config files
         if: ${{ matrix.target == 'windows' }}
