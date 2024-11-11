@@ -251,6 +251,57 @@ jobs:
           sudo chown -R root: *
         working-directory: toolbox/cmsis-toolbox-${{ matrix.target }}-${{ matrix.arch }}
 
+      - name: Generate manifest.yml
+        shell: bash
+        run: |
+          # Calculate checksums
+          TOOLBOX_VERSION=$(echo ${{ github.ref_name }} | cut -d'/' -f3)
+          CBRIDGE_CHECKSUM=$(sha256sum bin/cbridge${{ matrix.binary_extension }} | awk '{print $1}')
+          CBUILD_CHECKSUM=$(sha256sum bin/cbuild${{ matrix.binary_extension }} | awk '{print $1}')
+          CBUILD2CMAKE_CHECKSUM=$(sha256sum bin/cbuild2cmake${{ matrix.binary_extension }} | awk '{print $1}')
+          CBUILDGEN_CHECKSUM=$(sha256sum bin/cbuildgen${{ matrix.binary_extension }} | awk '{print $1}')
+          CPACKGET_CHECKSUM=$(sha256sum bin/cpackget${{ matrix.binary_extension }} | awk '{print $1}')
+          CSOLUTION_CHECKSUM=$(sha256sum bin/csolution${{ matrix.binary_extension }} | awk '{print $1}')
+          PACKCHK_CHECKSUM=$(sha256sum bin/packchk${{ matrix.binary_extension }} | awk '{print $1}')
+          SVDCONV_CHECKSUM=$(sha256sum bin/svdconv${{ matrix.binary_extension }} | awk '{print $1}')
+          VIDX2PIDX_CHECKSUM=$(sha256sum bin/vidx2pidx${{ matrix.binary_extension }} | awk '{print $1}')
+
+          # Create manifest.yml
+          cat <<EOF > manifest_$TOOLBOX_VERSION.yml
+          ---
+          name: CMSIS-Toolbox
+          version: $TOOLBOX_VERSION
+          binaries:
+            cbridge:
+              version: 1.2.3
+              sha256: $CBRIDGE_CHECKSUM
+            cbuild:
+              version: 1.2.3
+              sha256: $CBUILD_CHECKSUM
+            cbuild2cmake:
+              version: 1.2.3
+              sha256: $CBUILD2CMAKE_CHECKSUM
+            cbuildgen:
+              version: 1.2.3
+              sha256: $CBUILDGEN_CHECKSUM
+            cpackget:
+              version: 1.2.3
+              sha256: $CPACKGET_CHECKSUM
+            csolution:
+              version: 1.2.2
+              sha256: $CSOLUTION_CHECKSUM
+            packchk:
+              version: 1.2.2
+              sha256: $PACKCHK_CHECKSUM
+            svdconv:
+              version: 1.2.2
+              sha256: $SVDCONV_CHECKSUM
+            vidx2pidx:
+              version: 1.2.2
+              sha256: $VIDX2PIDX_CHECKSUM
+          EOF
+        working-directory: toolbox/cmsis-toolbox-${{ matrix.target }}-${{ matrix.arch }}
+
       - name: Zip folders Windows
         if: ${{ matrix.target == 'windows'}}
         run: |
