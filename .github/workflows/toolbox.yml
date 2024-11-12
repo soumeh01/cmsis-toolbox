@@ -264,6 +264,15 @@ jobs:
             pip install --upgrade pip
             pip install pyyaml
 
+      - name: Check Binary arch
+        shell: bash
+        run: |
+          file $(pwd)/toolbox/cmsis-toolbox-${{ matrix.target }}-${{ matrix.arch }}/bin/cbridge
+      - name: Check Binary arch
+        shell: bash
+        run: |
+          uname -m
+
       - name: Generate manifest file
         shell: bash
         run: |
