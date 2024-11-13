@@ -57,7 +57,7 @@ def get_version(binary_path: str) -> str:
         output = f"{result.stdout}"
         logging.debug(f"Version command output: {output}")
 
-        # Improved regex to capture version numbers more flexibly
+        # Regex to capture version numbers more flexibly
         # Adjust the pattern based on the expected output format
         version_pattern = r"(\d+\.\d+\.\d+(?:[-+][\w\.]+)?)"
         match = re.search(version_pattern, output)
