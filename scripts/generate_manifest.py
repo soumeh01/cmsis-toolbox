@@ -16,6 +16,7 @@ BINARY_FILES = ["cbridge", "cbuild", "cbuild2cmake", "cbuildgen", "cpackget", "c
 
 def calculate_checksum(filepath):
     """Calculate SHA-256 checksum of a file."""
+    logging.info(f"Calculating checksum for: {filepath}")
     sha256 = hashlib.sha256()
     try:
         with open(filepath, "rb") as f:
