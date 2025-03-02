@@ -8,8 +8,6 @@ name: nightly
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 2 * * *'
   pull_request:
     paths:
       - '.github/workflows/nightly.yml'
