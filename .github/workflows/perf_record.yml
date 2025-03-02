@@ -3,7 +3,7 @@ name: performance test
 on:
   pull_request:
     paths:
-      - '.github/workflows/perf_record.yaml'
+      - '.github/workflows/perf_record.yml'
       - '.github/matrix_includes.json'
       - 'test/**'
       - '!test/performance_test.py'
