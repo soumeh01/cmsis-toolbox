@@ -1,11 +1,12 @@
-name: E2E Tests
+name: performance test
 
 on:
   pull_request:
     paths:
-      - '.github/workflows/e2e_test.yaml'
+      - '.github/workflows/perf_record.yaml'
       - '.github/matrix_includes.json'
-      - '!test/tests.py'
+      - 'test/**'
+      - '!test/performance_test.py'
       - '!**/*.md'
   workflow_dispatch:
 
@@ -81,19 +82,21 @@ jobs:
       - name: Run Test
         shell: bash
         continue-on-error: true
+        working-directory: ./test
         run: |
-          robot --outputdir reports-${{ matrix.target }}-${{ matrix.arch }} \
-            --variable TEST_ENV_FILE:test-env-${{ matrix.target }}-${{ matrix.arch }}.md \
-            --consolewidth=150 --settag ${{ matrix.target }}-${{ matrix.arch }} \
-            --name ${{ matrix.target }}-${{ matrix.arch }} \
-            ./test
+          python ./performance_test.py -i $(pwd)/data
+
+      - name: Print Perf Report
+        if: always()
+        run: |
+          echo "![Image](./execution_times_plot.png)" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Archieve test results
         if: always()
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
         with:
-          name: reports-${{ matrix.target }}-${{ matrix.arch }}
-          path: reports-${{ matrix.target }}-${{ matrix.arch }}
+          name: perf_reports-${{ matrix.target }}-${{ matrix.arch }}
+          path: 
 
   report:
     runs-on: ubuntu-latest
