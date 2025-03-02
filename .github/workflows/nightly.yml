@@ -13,7 +13,6 @@ on:
       - '.github/workflows/nightly.yml'
       - '.github/matrix_includes.json'
       - 'debian/**'
-      - 'test/**'
       - '!test/tests.py'
       - '!**/*.md'
 env:
