@@ -86,14 +86,26 @@ jobs:
         run: |
           python ./performance_test.py -i $(pwd)/data
 
-      - name: Print Perf Report
+      - name: Archieve test results
         if: always()
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        with:
+          name: Image-${{ matrix.target }}-${{ matrix.arch }}
+          path: ./test/execution_times_plot.png
+
+      # - name: Print Perf Report
+      #   if: always()
+      #   working-directory: ./test
+      #   run: |
+      #     echo "![Image](./execution_times_plot.png)" >> $GITHUB_STEP_SUMMARY
+      - name: Convert Image to Base64 and Embed in Summary
         run: |
-          echo "![Image](./execution_times_plot.png)" >> "$GITHUB_STEP_SUMMARY"
+          IMAGE_BASE64=$(base64 -w 0 test/execution_times_plot.png)
+          echo '<img src="data:image/png;base64,'$IMAGE_BASE64'" width="300"/>' >> $GITHUB_STEP_SUMMARY
 
       - name: Archieve test results
         if: always()
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
         with:
           name: perf_reports-${{ matrix.target }}-${{ matrix.arch }}
-          path: 
+          path: ./test/performance_record.csv

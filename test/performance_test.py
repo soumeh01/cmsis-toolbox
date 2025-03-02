@@ -53,7 +53,8 @@ def execute_command(command):
     start_time = datetime.datetime.now()
     try:
         subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    except subprocess.CalledProcessError:
+    except subprocess.CalledProcessError as e:
+        print ("Ping stdout output:\n", e.output)
         return "N/A"  # Return N/A if the command fails
     end_time = datetime.datetime.now()
     return round((end_time - start_time).total_seconds(), 2)
@@ -71,8 +72,8 @@ def main():
     date_today = datetime.datetime.now().strftime("%m/%d/%Y")
     
     scenarios = {
-        "Case1": "build-cpp/solution.csolution.yml",
-        "Case2": "build-c/solution.csolution.yml"
+        "Case1": "/build-cpp/solution.csolution.yml",
+        "Case2": "/build-c/solution.csolution.yml"
     }
     
     csv_file = "performance_record.csv"
@@ -96,7 +97,7 @@ def main():
     results["Date"] = date_today
 
     for scenario, example in scenarios.items():
-        command = f"cbuild setup -S {os.path.join(args.example_root_dir, example)}"
+        command = "cbuild setup -S " + args.example_root_dir + example + " --update-rte" + " --packs"
         exec_time = execute_command(command)
         results[f"{os_type}-{scenario}"] = exec_time
 
