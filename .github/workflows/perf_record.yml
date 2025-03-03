@@ -1,4 +1,4 @@
-name: performance test
+name: performance
 
 on:
   pull_request:
@@ -84,28 +84,115 @@ jobs:
         continue-on-error: true
         working-directory: ./test
         run: |
-          python ./performance_test.py -i $(pwd)/data
+          python ./performance/run_tests.py -i ./data -o ./performance_record_${{ matrix.target }}_${{ matrix.arch }}.csv
 
-      - name: Archieve test results
+      - name: Archive test results
         if: always()
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
         with:
           name: Image-${{ matrix.target }}-${{ matrix.arch }}
           path: ./test/execution_times_plot.png
 
-      # - name: Print Perf Report
-      #   if: always()
-      #   working-directory: ./test
-      #   run: |
-      #     echo "![Image](./execution_times_plot.png)" >> $GITHUB_STEP_SUMMARY
-      - name: Convert Image to Base64 and Embed in Summary
+      - name: Print Perf Report
+        if: always()
+        working-directory: ./test
         run: |
-          IMAGE_BASE64=$(base64 -w 0 test/execution_times_plot.png)
-          echo '<img src="data:image/png;base64,'$IMAGE_BASE64'" width="300"/>' >> $GITHUB_STEP_SUMMARY
+          echo "![Image](./execution_times_plot.png)" >> $GITHUB_STEP_SUMMARY
 
-      - name: Archieve test results
+      - name: Archive test results
         if: always()
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
         with:
-          name: perf_reports-${{ matrix.target }}-${{ matrix.arch }}
-          path: ./test/performance_record.csv
+          name: perf_report_${{ matrix.target }}_${{ matrix.arch }}
+          path: ./test/performance_record_${{ matrix.target }}_${{ matrix.arch }}.csv
+
+  Merge_Result:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Download performance report Windows
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: perf_report_windows_amd64
+          path: perf_reports
+
+      - name: Download cmsis toolbox linux
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: perf_report_linux_amd64
+          path: perf_reports
+
+      - name: Download cmsis toolbox macOs
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: perf_report_darwin_amd64
+          path: perf_reports
+
+      - name: Set up Python
+        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install pip dependencies
+        run: |
+            pip install --upgrade pip
+            pip install -r test/requirements.txt
+
+      - name: LS CSV files
+        run: |
+          ls -l perf_reports
+
+      - name: Merge CSV files
+        run: |
+          python test/performance/merge.py -d perf_reports
+
+      - name: Archive performance results
+        if: always()
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        with:
+          name: consolidated_performance_report
+          path: ./merged.csv
+
+      # - name: Get last 7 nightly Run IDs
+      #   id: get_run_ids
+      #   if: always()
+      #   shell: bash
+      #   run: |
+      #     RUN_IDS=$(gh run list --limit 7 --workflow performance --repo soumeh01/cmsis-toolbox --json databaseId --jq '[.[].databaseId]')
+      #     echo "NIGHTLY_RUN_IDS=$(echo $RUN_IDS | jq -c)" >> $GITHUB_OUTPUT
+
+      # - name: Access Indexed Run IDs
+      #   if: always()
+      #   shell: bash
+      #   run: |
+      #     RUN_IDS='${{ steps.get_run_ids.outputs.NIGHTLY_RUN_IDS }}'
+
+      #     # Extract specific elements
+      #     RUN_ID_0=$(echo "$RUN_IDS" | jq -r '.[0]')
+      #     RUN_ID_1=$(echo "$RUN_IDS" | jq -r '.[1]')
+      #     RUN_ID_2=$(echo "$RUN_IDS" | jq -r '.[2]')
+
+      #     echo "First Run ID: $RUN_ID_0"
+      #     echo "Second Run ID: $RUN_ID_1"
+      #     echo "Third Run ID: $RUN_ID_2"
+
+      #     # Use them in commands
+      #     gh run view $RUN_ID_0
+      #     gh run view $RUN_ID_1
+
+      # - name: Download last perf records
+      #   shell: bash
+      #   run : |
+      #     gh run download -D projmgr-${{ matrix.target }}-${{ matrix.arch }} ${{ steps.get_run_id.outputs.NIGHTLY_RUN_ID }} -n projmgr-${{ matrix.target }}-${{ matrix.arch }} -R Open-CMSIS-Pack/devtools
+      #     gh run download -D cbuildgen-${{ matrix.target }}-${{ matrix.arch }} ${{ steps.get_run_id.outputs.NIGHTLY_RUN_ID }} -n cbuildgen-${{ matrix.target }}-${{ matrix.arch }} -R Open-CMSIS-Pack/devtools
+      #     gh run download -D packchk-${{ matrix.target }}-${{ matrix.arch }} ${{ steps.get_run_id.outputs.NIGHTLY_RUN_ID }} -n packchk-${{ matrix.target }}-${{ matrix.arch }} -R Open-CMSIS-Pack/devtools
+      #     gh run download -D svdconv-${{ matrix.target }}-${{ matrix.arch }} ${{ steps.get_run_id.outputs.NIGHTLY_RUN_ID }} -n svdconv-${{ matrix.target }}-${{ matrix.arch }} -R Open-CMSIS-Pack/devtools
+
