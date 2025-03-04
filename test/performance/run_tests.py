@@ -4,44 +4,45 @@ import subprocess
 import platform
 import datetime
 import argparse
+from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
 
-def plot_execution_times(csv_file="performance_record.csv", output_file="execution_times_plot.png"):
-    """Reads execution times from a CSV file and plots a line graph, saving the output to a file."""
-    # Load the CSV file
-    df = pd.read_csv(csv_file)
+# def plot_execution_times(csv_file="performance_record.csv", output_file="execution_times_plot.png"):
+#     """Reads execution times from a CSV file and plots a line graph, saving the output to a file."""
+#     # Load the CSV file
+#     df = pd.read_csv(csv_file)
 
-    # Convert Date column to datetime for better plotting
-    df['Date'] = pd.to_datetime(df['Date'])
+#     # Convert Date column to datetime for better plotting
+#     df['Date'] = pd.to_datetime(df['Date'])
 
 
-    # Set Date as the index for plotting
-    df.set_index('Date', inplace=True)
+#     # Set Date as the index for plotting
+#     df.set_index('Date', inplace=True)
 
-    # Convert non-numeric values (like 'N/A') to NaN
-    df.replace("N/A", None, inplace=True)
+#     # Convert non-numeric values (like 'N/A') to NaN
+#     df.replace("N/A", None, inplace=True)
 
-    # Convert execution times to float (ignoring NaN values)
-    df = df.astype(float)
+#     # Convert execution times to float (ignoring NaN values)
+#     df = df.astype(float)
 
-    # Plot the data
-    plt.figure(figsize=(10, 5))
-    for column in df.columns:
-        plt.plot(df.index, df[column], marker='o', linestyle='-', label=column)
+#     # Plot the data
+#     plt.figure(figsize=(10, 5))
+#     for column in df.columns:
+#         plt.plot(df.index, df[column], marker='o', linestyle='-', label=column)
 
-    # Formatting
-    plt.xlabel("Date")
-    plt.ylabel("Execution Time (seconds)")
-    plt.title("Scenario Execution Times Over Time")
-    plt.xticks(rotation=45)  # Rotate dates for better visibility
-    plt.legend(title="OS-Scenario", bbox_to_anchor=(1.05, 1), loc="upper left")  # Move legend outside
-    plt.grid(True)
+#     # Formatting
+#     plt.xlabel("Date")
+#     plt.ylabel("Execution Time (seconds)")
+#     plt.title("Scenario Execution Times Over Time")
+#     plt.xticks(rotation=45)  # Rotate dates for better visibility
+#     plt.legend(title="OS-Scenario", bbox_to_anchor=(1.05, 1), loc="upper left")  # Move legend outside
+#     plt.grid(True)
 
-    # Save the plot
-    plt.tight_layout()
-    plt.savefig(output_file, bbox_inches="tight")
-    print(f"Plot saved as {output_file}")
+#     # Save the plot
+#     plt.tight_layout()
+#     plt.savefig(output_file, bbox_inches="tight")
+#     print(f"Plot saved as {output_file}")
 
 def get_os():
     """Return a short OS name."""
@@ -53,7 +54,8 @@ def execute_command(command):
     start_time = datetime.datetime.now()
     try:
         subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    except subprocess.CalledProcessError:
+    except subprocess.CalledProcessError as e:
+        print ("error:\n", e.output)
         return "N/A"  # Return N/A if the command fails
     end_time = datetime.datetime.now()
     return round((end_time - start_time).total_seconds(), 2)
@@ -62,12 +64,13 @@ def parse_arguments():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description="Run performance tests and record execution times")
     parser.add_argument('-i', '--example_root_dir', type=str, required=True, help='Root folder path to example directory')
+    parser.add_argument('-o', '--output_file', type=str, default="./performance_record.csv", help='Path to the output csv file')
     return parser.parse_args()
 
 def main():
     args = parse_arguments()
     os_type = get_os()
-    # date_today = datetime.datetime.now().strftime("%Y-%m-%d")
+    cwd = Path.cwd()
     date_today = datetime.datetime.now().strftime("%m/%d/%Y")
     
     scenarios = {
@@ -75,8 +78,8 @@ def main():
         "Case2": "build-c/solution.csolution.yml"
     }
     
-    csv_file = "performance_record.csv"
-
+    csv_file = cwd / args.output_file
+    csv_file = csv_file.resolve()
     # Read existing headers if file exists, otherwise create new ones
     try:
         with open(csv_file, "r") as f:
@@ -96,7 +99,9 @@ def main():
     results["Date"] = date_today
 
     for scenario, example in scenarios.items():
-        command = f"cbuild setup -S {os.path.join(args.example_root_dir, example)}"
+        csolution = cwd / args.example_root_dir / example
+        csolution = csolution.resolve()
+        command = "cbuild setup -S " + str(csolution) + " --update-rte" + " --packs"
         exec_time = execute_command(command)
         results[f"{os_type}-{scenario}"] = exec_time
 
@@ -113,7 +118,7 @@ def main():
         writer.writerow(row)
 
     print(f"Execution times recorded in {csv_file}")
-    plot_execution_times("performance_record.csv", "execution_times_plot.png")
+    # plot_execution_times("performance_record.csv", "execution_times_plot.png")
 
 if __name__ == "__main__":
     main()
