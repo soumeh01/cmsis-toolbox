@@ -1,9 +1,9 @@
-name: performance test
+name: performance
 
 on:
   pull_request:
     paths:
-      - '.github/workflows/perf_record.yaml'
+      - '.github/workflows/perf_record.yml'
       - '.github/matrix_includes.json'
       - 'test/**'
       - '!test/performance_test.py'
@@ -84,74 +84,94 @@ jobs:
         continue-on-error: true
         working-directory: ./test
         run: |
-          python ./performance_test.py -i $(pwd)/data
+          python ./performance/run_tests.py -i ./data -o ./performance_record_${{ matrix.target }}_${{ matrix.arch }}.csv
 
-      - name: Print Perf Report
-        if: always()
-        run: |
-          echo "![Image](./execution_times_plot.png)" >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Archieve test results
+      - name: Archive test results
         if: always()
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
         with:
-          name: perf_reports-${{ matrix.target }}-${{ matrix.arch }}
-          path: 
+          name: Image-${{ matrix.target }}-${{ matrix.arch }}
+          path: ./test/execution_times_plot.png
 
-  report:
+      - name: Print Perf Report
+        if: always()
+        working-directory: ./test
+        run: |
+          echo "![Image](./execution_times_plot.png)" >> $GITHUB_STEP_SUMMARY
+
+      - name: Archive test results
+        if: always()
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        with:
+          name: perf_report_${{ matrix.target }}_${{ matrix.arch }}
+          path: ./test/performance_record_${{ matrix.target }}_${{ matrix.arch }}.csv
+
+  Merge_Result:
     runs-on: ubuntu-latest
-    if: always()
     needs: test
-    permissions: write-all
     steps:
-    - name: Harden Runner
-      uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
-      with:
-        egress-policy: audit
+      - name: Harden Runner
+        uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
+        with:
+          egress-policy: audit
 
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-    - name: Set up Python
-      uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
-      with:
-        python-version: '3.11'
-        cache: 'pip'
+      - name: Download performance report Windows
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: perf_report_windows_amd64
+          path: perf_reports
 
-    - name: Install pip dependencies
-      run: |
-          pip install --upgrade pip
-          pip install -r test/requirements.txt
+      - name: Download cmsis toolbox linux
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: perf_report_linux_amd64
+          path: perf_reports
 
-    - name: Download reports
-      uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
-      with:
-        path: artifacts
-        pattern: reports-*
+      - name: Download cmsis toolbox macOs
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: perf_report_darwin_amd64
+          path: perf_reports
 
-    - name: Consolidate robot test results
-      working-directory: artifacts
-      continue-on-error: true
-      run: |
-        python -m robot.rebot --name Collective_Robot_Results --outputdir collective_robot_results --output output.xml \
-          ./reports-windows-amd64/output.xml \
-          ./reports-linux-amd64/output.xml \
-          ./reports-darwin-amd64/output.xml
+      - name: Set up Python
+        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: '3.11'
+          cache: 'pip'
 
-    - name: Generate Summary report
-      if: always()
-      run: |
-        python ./test/lib/execution_summary.py artifacts \
-          -r ./test/reference.md \
-          -o artifacts/collective_robot_results/output.xml \
-          -m summary_report.md
+      - name: Install pip dependencies
+        run: |
+            pip install --upgrade pip
+            pip install -r test/requirements.txt
 
-    - name: Print E2E Report
-      if: always()
-      run: cat summary_report.md >> $GITHUB_STEP_SUMMARY
+      - name: Get latest successful performance workflow Run ID
+        id: get_run_id
+        shell: bash
+        run: |
+          RUN_ID=$(gh run list --workflow performance --repo soumeh01/cmsis-toolbox --json databaseId,conclusion --jq '[.[] | select(.conclusion=="success") | .databaseId] | first')
+          echo "Last_SUCCESS_RUN_ID=$RUN_ID" >> $GITHUB_OUTPUT
 
-    - name: Archieve consolidated test results
-      if: always()
-      uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
-      with:
-        name: consolidated-reports
-        path: artifacts/collective_robot_results
+      - name: Download Open-CMSIS-Pack/devtools nightly artifacts
+        shell: bash
+        run : |
+          gh run download -D perf_reports/last_run_perf_report ${{ steps.get_run_id.outputs.Last_SUCCESS_RUN_ID }} -n perf_report_windows_amd64 -R soumeh01/cmsis-toolbox
+          gh run download -D perf_reports/last_run_perf_report ${{ steps.get_run_id.outputs.Last_SUCCESS_RUN_ID }} -n perf_report_linux_amd64 -R soumeh01/cmsis-toolbox
+          gh run download -D perf_reports/last_run_perf_report ${{ steps.get_run_id.outputs.Last_SUCCESS_RUN_ID }} -n perf_report_darwin_amd64 -R soumeh01/cmsis-toolbox
+
+      - name: LS CSV files
+        if: always()
+        run: |
+          ls -lR perf_reports
+
+      - name: Merge CSV files
+        run: |
+          python test/performance/merge.py -d perf_reports
+
+      - name: Archive performance results
+        if: always()
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        with:
+          name: consolidated_performance_report
+          path: ./merged.csv
