@@ -146,6 +146,11 @@ jobs:
             pip install --upgrade pip
             pip install -r test/requirements.txt
 
+      - name: Authenticate with GitHub CLI
+        shell: bash
+        run: |
+          echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
+
       - name: Get latest successful performance workflow Run ID
         id: get_run_id
         shell: bash
@@ -164,6 +169,13 @@ jobs:
         if: always()
         run: |
           ls -lR perf_reports
+
+      - name: Archive performance results
+        if: always()
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        with:
+          name: Test
+          path: ./perf_reports
 
       - name: Merge CSV files
         run: |
