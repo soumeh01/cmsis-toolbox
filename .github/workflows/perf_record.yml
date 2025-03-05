@@ -5,14 +5,16 @@ on:
     paths:
       - '.github/workflows/perf_record.yml'
       - '.github/matrix_includes.json'
-      - 'test/**'
-      - '!test/performance_test.py'
+      - '!test/performance/**'
       - '!**/*.md'
   workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+# Declare default permissions as read only.
+permissions: read-all
 
 jobs:
   matrix_prep:
@@ -91,13 +93,7 @@ jobs:
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
         with:
           name: Image-${{ matrix.target }}-${{ matrix.arch }}
-          path: ./test/execution_times_plot.png
-
-      - name: Print Perf Report
-        if: always()
-        working-directory: ./test
-        run: |
-          echo "![Image](./execution_times_plot.png)" >> $GITHUB_STEP_SUMMARY
+          path: ./test/execution_performance_plot.png
 
       - name: Archive test results
         if: always()
@@ -106,7 +102,7 @@ jobs:
           name: perf_report_${{ matrix.target }}_${{ matrix.arch }}
           path: ./test/performance_record_${{ matrix.target }}_${{ matrix.arch }}.csv
 
-  Merge_Result:
+  merge_results:
     runs-on: ubuntu-latest
     needs: test
     steps:
@@ -117,24 +113,23 @@ jobs:
 
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - name: Create directory
-        run: |
-          mkdir -p perf_reports/curr_reports
+      - name: Create Directory for Reports
+        run: mkdir -p perf_reports/curr_reports
 
       - name: Download performance report Windows
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
         with:
           name: perf_report_windows_amd64
           path: perf_reports/curr_reports
 
       - name: Download cmsis toolbox linux
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
         with:
           name: perf_report_linux_amd64
           path: perf_reports/curr_reports
 
       - name: Download cmsis toolbox macOs
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
         with:
           name: perf_report_darwin_amd64
           path: perf_reports/curr_reports
@@ -150,27 +145,35 @@ jobs:
             pip install --upgrade pip
             pip install -r test/requirements.txt
 
-      - name: Authenticate with GitHub CLI
+      - name: Authenticate GitHub CLI
         shell: bash
         run: |
           echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
 
-      - name: Get latest successful performance workflow Run ID
+      - name: Get Latest Successful Performance Run ID
         id: get_run_id
         shell: bash
         run: |
           RUN_ID=$(gh run list --workflow performance --repo soumeh01/cmsis-toolbox --json databaseId,conclusion --jq '[.[] | select(.conclusion=="success") | .databaseId] | first')
-          echo "Last_SUCCESS_RUN_ID=$RUN_ID" >> $GITHUB_OUTPUT
+          echo "LAST_SUCCESS_RUN_ID=$RUN_ID" >> $GITHUB_OUTPUT
 
-      - name: Download Open-CMSIS-Pack/devtools nightly artifacts
+      - name: Download soumeh01/cmsis-toolbox performance artifacts
+        if: ${{ steps.get_run_id.outputs.LAST_SUCCESS_RUN_ID != ''}}
+        id: download_prev_perf_artifacts
+        continue-on-error: true
+        shell: bash
+        run : gh run download -D perf_reports/last_run_reports ${{ steps.get_run_id.outputs.Last_SUCCESS_RUN_ID }} -n consolidated_performance_report -R soumeh01/cmsis-toolbox
+
+      - name: Rename Downloaded artifacts
+        if: steps.download_prev_perf_artifacts.outcome == 'success'
         shell: bash
         run : |
-          gh run download -D perf_reports/last_run_reports ${{ steps.get_run_id.outputs.Last_SUCCESS_RUN_ID }} -n consolidated_performance_report -R soumeh01/cmsis-toolbox
+          mv perf_reports/last_run_reports/consolidated_perf_report.csv perf_reports/last_run_reports/last_run_consolidated_performance_report.csv
 
-      # - name: LS CSV files
-      #   if: always()
-      #   run: |
-      #     ls -lR perf_reports
+      - name: LS CSV files
+        if: always()
+        run: |
+          ls -lR perf_reports
 
       - name: Archive performance results
         if: always()
@@ -180,8 +183,8 @@ jobs:
           path: ./perf_reports
 
       - name: Merge CSV files
-        run: |
-          python test/performance/merge.py -d perf_reports
+        if: always()
+        run: python test/performance/merge.py -d perf_reports
 
       - name: Archive performance results
         if: always()
