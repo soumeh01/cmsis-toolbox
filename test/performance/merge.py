@@ -59,18 +59,19 @@ def main():
             # Define the pattern to match your CSV files
             csv_files = glob.glob(entry.path + '/*_amd64.csv', recursive=False)
 
-            # Initialize an empty DataFrame
-            merged_df = pd.DataFrame()
-            for file in csv_files:
-                # Read each CSV file into a DataFrame
-                df = pd.read_csv(file)
-                # Merge the current DataFrame with the accumulated DataFrame
-                if merged_df.empty:
-                    merged_df = df
-                else:
-                    merged_df = pd.merge(merged_df, df, on="Date", how="outer")
-            # Save the merged DataFrame to a new CSV file
-            merged_df.to_csv(entry.path + "/merged.csv", index=False)
+            if len(csv_files) != 0:
+                # Initialize an empty DataFrame
+                merged_df = pd.DataFrame()
+                for file in csv_files:
+                    # Read each CSV file into a DataFrame
+                    df = pd.read_csv(file)
+                    # Merge the current DataFrame with the accumulated DataFrame
+                    if merged_df.empty:
+                        merged_df = df
+                    else:
+                        merged_df = pd.merge(merged_df, df, on="Date", how="outer")
+                # Save the merged DataFrame to a new CSV file
+                merged_df.to_csv(entry.path + "/merged.csv", index=False)
 
     # Define the pattern to match your CSV files
     merged_csv_files = glob.glob(args.perf_record_dir + '/**/merged.csv', recursive=True)
@@ -96,6 +97,7 @@ def main():
 
     # Save the consolidated DataFrame to a new CSV file
     consolidated_df.to_csv("consolidated_perf_report.csv", index=False)
+    plot_execution_trend("consolidated_perf_report.csv", "performance_plot.png")
 
 if __name__ == "__main__":
     main()
