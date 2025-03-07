@@ -27,20 +27,6 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - name: Download IAR artifacts
-        shell: bash
-        run: |
-          curl -L https://github.com/iarsystems/arm/releases/download/9.60.4/cxarm-9.60.4-linux-x86_64-minimal.tar.bz2 --output ./cxarm-9.60.4-linux-x86_64-minimal.tar.bz2
-          curl -L https://github.com/iarsystems/arm/releases/download/9.60.4/cxarm-9.60.4-linux-x86_64-minimal.tar.bz2.sha256 --output ./cxarm-9.60.4-linux-x86_64-minimal.tar.bz2.sha256
-
-      - name: Validate the hash
-        shell: bash
-        run: sha256sum --check cxarm-9.60.4-linux-x86_64-minimal.tar.bz2.sha256
-
-      - name: Extract IAR artifacts
-        shell: bash
-        run: tar -xvf cxarm-9.60.4-linux-x86_64-minimal.tar.bz2
-
       - name: Setup vcpkg environment
         uses: ARM-software/cmsis-actions/vcpkg@f608f32a6d83e90d79e1f2bbb7812fdb94bf1679 # v1
         with:
@@ -62,16 +48,9 @@ jobs:
           cbuild2cmake -V
           cbuildgen -V
 
-      - name: List registered toolchains
-        shell: bash
-        run: |
-          export IAR_TOOLCHAIN_9_60_4=$(pwd)/cxarm-9.60.4/arm/bin
-          export IAR_LMS_BEARER_TOKEN=${{ secrets.IAR_TOKEN }}
-          csolution list toolchains
-
       - name: Build Example
         shell: bash
         run: |
-          export IAR_TOOLCHAIN_9_60_4=$(pwd)/cxarm-9.60.4/arm/bin
           export IAR_LMS_BEARER_TOKEN=${{ secrets.IAR_TOKEN }}
+          csolution list toolchains
           cbuild ./test/data/build-c/solution.csolution.yml -p --update-rte
