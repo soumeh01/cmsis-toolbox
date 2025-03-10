@@ -311,14 +311,160 @@ jobs:
           path: ./debian/build/cmsis-toolbox_*_amd64.deb
           retention-days: ${{ env.retention-days }}
 
-  run-tests:
+  # run-tests:
+  #   needs: [ matrix_prep, create-toolbox ]
+  #   runs-on: ${{ matrix.runs_on }}
+  #   continue-on-error: true
+  #   strategy:
+  #     matrix: ${{ fromJson(needs.matrix_prep.outputs.matrix) }}
+
+  #   steps:     
+  #     - name: Harden Runner
+  #       uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
+  #       with:
+  #         egress-policy: audit
+
+  #     - name: Checkout toolbox repository
+  #       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+    
+  #     - name: Set up Python
+  #       uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+  #       with:
+  #         python-version: '3.11'
+  #         cache: 'pip'
+    
+  #     - name: Install pip dependencies
+  #       run: |
+  #           pip install --upgrade pip
+  #           pip install -r test/requirements.txt
+
+  #     - name: Setup vcpkg environment
+  #       uses: ARM-software/cmsis-actions/vcpkg@f608f32a6d83e90d79e1f2bbb7812fdb94bf1679 # v1
+  #       with:
+  #         config: "./test/vcpkg-configuration.json"
+  #         vcpkg-downloads: "${{ github.workspace }}/.vcpkg/downloads"
+  #         cache: "-"
+    
+  #     - name: Activate Arm tool license
+  #       run: |
+  #         armlm activate --server https://mdk-preview.keil.arm.com --product KEMDK-COM0
+  #       working-directory: ./test
+
+  #     - name: Download cmsis toolbox ${{ matrix.target }} ${{ matrix.arch }}
+  #       uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+  #       with:
+  #         name: cmsis-toolbox-${{ matrix.target }}-${{ matrix.arch }}
+  #         path: cmsis-toolbox
+
+  #     - name: Set execution permissions
+  #       run: |
+  #         chmod -R +x ./cmsis-toolbox/bin/*
+
+  #     - name: Get toolbox path
+  #       if: always()
+  #       id: toolbox_path
+  #       shell: bash
+  #       run: |
+  #         echo "path=$(echo "$(pwd)/cmsis-toolbox/bin")" >> $GITHUB_OUTPUT
+
+  #     - name: Binary version info
+  #       if: always()
+  #       shell: bash
+  #       run: |
+  #         export PATH="${{steps.toolbox_path.outputs.path}}:$PATH"
+  #         csolution -V
+  #         cpackget -V
+  #         cbuild -V
+  #         cbuild2cmake -V
+  #         cbuildgen -V
+
+  #     - name: Run Test
+  #       shell: bash
+  #       continue-on-error: true
+  #       run: |
+  #         export PATH="${{steps.toolbox_path.outputs.path}}:$PATH"
+  #         robot --outputdir reports-${{ matrix.target }}-${{ matrix.arch }} \
+  #           --variable TEST_ENV_FILE:test-env-${{ matrix.target }}-${{ matrix.arch }}.md \
+  #           --consolewidth=150 --settag ${{ matrix.target }}-${{ matrix.arch }} \
+  #           --name ${{ matrix.target }}-${{ matrix.arch }} \
+  #           ./test
+
+  #     - name: Archieve test results
+  #       if: always()
+  #       uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+  #       with:
+  #         name: reports-${{ matrix.target }}-${{ matrix.arch }}
+  #         path: reports-${{ matrix.target }}-${{ matrix.arch }}
+  #         retention-days: ${{ env.retention-days }}
+
+  # consolidate-report:
+  #   if: always()
+  #   needs: [run-tests]
+  #   runs-on: ubuntu-latest
+  #   permissions: write-all
+
+  #   steps:
+  #   - name: Harden Runner
+  #     uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
+  #     with:
+  #       egress-policy: audit
+
+  #   - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+  #   - name: Set up Python
+  #     uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+  #     with:
+  #       python-version: '3.11'
+  #       cache: 'pip'
+
+  #   - name: Install pip dependencies
+  #     run: |
+  #         pip install --upgrade pip
+  #         pip install -r test/requirements.txt
+
+  #   - name: Download reports
+  #     uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+  #     with:
+  #       path: artifacts
+  #       pattern: reports-*
+
+  #   - name: Consolidate robot test results
+  #     working-directory: artifacts
+  #     continue-on-error: true
+  #     run: |
+  #       python -m robot.rebot --name Collective_Robot_Results --outputdir collective_robot_results --output output.xml \
+  #         ./reports-windows-amd64/output.xml \
+  #         ./reports-linux-amd64/output.xml \
+  #         ./reports-darwin-amd64/output.xml
+
+  #   - name: Generate Summary report
+  #     if: always()
+  #     run: |
+  #       python ./test/lib/execution_summary.py artifacts \
+  #         -r ./test/reference.md \
+  #         -o artifacts/collective_robot_results/output.xml \
+  #         -m summary_report.md
+
+  #   - name: Print E2E Report
+  #     if: always()
+  #     run: cat summary_report.md >> $GITHUB_STEP_SUMMARY
+
+  #   - name: Archieve consolidated test results
+  #     if: always()
+  #     uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+  #     with:
+  #       name: consolidated-reports
+  #       path: artifacts/collective_robot_results
+  #       retention-days: ${{ env.retention-days }}
+
+  performance-test:
     needs: [ matrix_prep, create-toolbox ]
     runs-on: ${{ matrix.runs_on }}
     continue-on-error: true
     strategy:
       matrix: ${{ fromJson(needs.matrix_prep.outputs.matrix) }}
-
-    steps:     
+  
+    steps:
       - name: Harden Runner
         uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
         with:
@@ -326,13 +472,13 @@ jobs:
 
       - name: Checkout toolbox repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-    
+
       - name: Set up Python
         uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
         with:
           python-version: '3.11'
           cache: 'pip'
-    
+
       - name: Install pip dependencies
         run: |
             pip install --upgrade pip
@@ -344,7 +490,7 @@ jobs:
           config: "./test/vcpkg-configuration.json"
           vcpkg-downloads: "${{ github.workspace }}/.vcpkg/downloads"
           cache: "-"
-    
+
       - name: Activate Arm tool license
         run: |
           armlm activate --server https://mdk-preview.keil.arm.com --product KEMDK-COM0
@@ -359,14 +505,14 @@ jobs:
       - name: Set execution permissions
         run: |
           chmod -R +x ./cmsis-toolbox/bin/*
-
+  
       - name: Get toolbox path
         if: always()
         id: toolbox_path
         shell: bash
         run: |
           echo "path=$(echo "$(pwd)/cmsis-toolbox/bin")" >> $GITHUB_OUTPUT
-
+  
       - name: Binary version info
         if: always()
         shell: bash
@@ -381,78 +527,116 @@ jobs:
       - name: Run Test
         shell: bash
         continue-on-error: true
+        working-directory: ./test
         run: |
           export PATH="${{steps.toolbox_path.outputs.path}}:$PATH"
+          python ./performance/run_tests.py -i ./data -o ./performance_record_${{ matrix.target }}_${{ matrix.arch }}.csv
+
+      - name: Run Test
+        shell: bash
+        continue-on-error: true
+        working-directory: ./test
+        run: |
           robot --outputdir reports-${{ matrix.target }}-${{ matrix.arch }} \
-            --variable TEST_ENV_FILE:test-env-${{ matrix.target }}-${{ matrix.arch }}.md \
+            --variable OUTPUT_FILE:performance_record_${{ matrix.target }}_${{ matrix.arch }}.csv \
             --consolewidth=150 --settag ${{ matrix.target }}-${{ matrix.arch }} \
             --name ${{ matrix.target }}-${{ matrix.arch }} \
-            ./test
+            ./performance_test.robot
 
-      - name: Archieve test results
+      - name: Archive test results
         if: always()
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
         with:
-          name: reports-${{ matrix.target }}-${{ matrix.arch }}
-          path: reports-${{ matrix.target }}-${{ matrix.arch }}
-          retention-days: ${{ env.retention-days }}
-
-  consolidate-report:
-    if: always()
-    needs: [run-tests]
+          name: perf_report_${{ matrix.target }}_${{ matrix.arch }}
+          path: ./test/performance_record_${{ matrix.target }}_${{ matrix.arch }}.csv
+  
+  merge_results:
     runs-on: ubuntu-latest
-    permissions: write-all
-
+    needs: [ performance-test ]
     steps:
-    - name: Harden Runner
-      uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
-      with:
-        egress-policy: audit
+      - name: Harden Runner
+        uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
+        with:
+          egress-policy: audit
 
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-    - name: Set up Python
-      uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
-      with:
-        python-version: '3.11'
-        cache: 'pip'
+      - name: Create Directory for Reports
+        run: mkdir -p perf_reports/curr_reports
 
-    - name: Install pip dependencies
-      run: |
-          pip install --upgrade pip
-          pip install -r test/requirements.txt
+      - name: Download performance report Windows
+        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
+        with:
+          name: perf_report_windows_amd64
+          path: perf_reports/curr_reports
 
-    - name: Download reports
-      uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
-      with:
-        path: artifacts
-        pattern: reports-*
+      - name: Download cmsis toolbox linux
+        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
+        with:
+          name: perf_report_linux_amd64
+          path: perf_reports/curr_reports
 
-    - name: Consolidate robot test results
-      working-directory: artifacts
-      continue-on-error: true
-      run: |
-        python -m robot.rebot --name Collective_Robot_Results --outputdir collective_robot_results --output output.xml \
-          ./reports-windows-amd64/output.xml \
-          ./reports-linux-amd64/output.xml \
-          ./reports-darwin-amd64/output.xml
+      - name: Download cmsis toolbox macOs
+        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
+        with:
+          name: perf_report_darwin_amd64
+          path: perf_reports/curr_reports
 
-    - name: Generate Summary report
-      if: always()
-      run: |
-        python ./test/lib/execution_summary.py artifacts \
-          -r ./test/reference.md \
-          -o artifacts/collective_robot_results/output.xml \
-          -m summary_report.md
+      - name: Set up Python
+        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: '3.11'
+          cache: 'pip'
 
-    - name: Print E2E Report
-      if: always()
-      run: cat summary_report.md >> $GITHUB_STEP_SUMMARY
+      - name: Install pip dependencies
+        run: |
+            pip install --upgrade pip
+            pip install -r test/requirements.txt
 
-    - name: Archieve consolidated test results
-      if: always()
-      uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
-      with:
-        name: consolidated-reports
-        path: artifacts/collective_robot_results
-        retention-days: ${{ env.retention-days }}
+      - name: Authenticate GitHub CLI
+        shell: bash
+        run: |
+          echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
+
+      - name: Get Latest Successful nightly Run ID
+        id: get_run_id
+        shell: bash
+        run: |
+          RUN_ID=$(gh run list --workflow nightly --repo soumeh01/cmsis-toolbox --json databaseId,conclusion --jq '[.[] | select(.conclusion=="success") | .databaseId] | first')
+          echo "LAST_SUCCESS_RUN_ID=$RUN_ID" >> $GITHUB_OUTPUT
+
+      - name: Download soumeh01/cmsis-toolbox performance artifacts
+        if: ${{ steps.get_run_id.outputs.LAST_SUCCESS_RUN_ID != ''}}
+        id: download_prev_perf_artifacts
+        continue-on-error: true
+        shell: bash
+        run : gh run download -D perf_reports/last_run_reports ${{ steps.get_run_id.outputs.Last_SUCCESS_RUN_ID }} -n consolidated_performance_report -R soumeh01/cmsis-toolbox
+
+      - name: Rename Downloaded artifacts
+        if: steps.download_prev_perf_artifacts.outcome == 'success'
+        shell: bash
+        run : |
+          mv perf_reports/last_run_reports/consolidated_perf_report.csv perf_reports/last_run_reports/last_run_consolidated_performance_report.csv
+
+      - name: LS CSV files
+        if: always()
+        run: |
+          ls -lR perf_reports
+
+      - name: Merge CSV files
+        if: always()
+        run: python test/lib/merge.py -d perf_reports
+
+      - name: Archive test results
+        if: always()
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        with:
+          name: Performance_Trend
+          path: ./performance_plot.png
+
+      - name: Archive performance results
+        if: always()
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        with:
+          name: consolidated_performance_report
+          path: ./consolidated_perf_report.csv
