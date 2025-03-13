@@ -459,10 +459,8 @@ jobs:
 
   performance-test:
     needs: [ matrix_prep, create-toolbox ]
-    runs-on: ${{ matrix.runs_on }}
+    runs-on: ubuntu-latest
     continue-on-error: true
-    strategy:
-      matrix: ${{ fromJson(needs.matrix_prep.outputs.matrix) }}
   
     steps:
       - name: Harden Runner
@@ -496,10 +494,10 @@ jobs:
           armlm activate --server https://mdk-preview.keil.arm.com --product KEMDK-COM0
         working-directory: ./test
 
-      - name: Download cmsis toolbox ${{ matrix.target }} ${{ matrix.arch }}
+      - name: Download cmsis toolbox
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
         with:
-          name: cmsis-toolbox-${{ matrix.target }}-${{ matrix.arch }}
+          name: cmsis-toolbox-linux-amd64
           path: cmsis-toolbox
 
       - name: Set execution permissions
@@ -530,15 +528,15 @@ jobs:
         working-directory: ./test
         run: |
           export PATH="${{steps.toolbox_path.outputs.path}}:$PATH"
-          robot --outputdir reports-${{ matrix.target }}-${{ matrix.arch }} \
-            --variable OUTPUT_FILE:performance_record_${{ matrix.target }}_${{ matrix.arch }}.json \
-            --consolewidth=150 --settag ${{ matrix.target }}-${{ matrix.arch }} \
-            --name ${{ matrix.target }}-${{ matrix.arch }} \
+          robot --outputdir reports-linux-amd64 \
+            --variable OUTPUT_FILE:performance_record_linux_amd64.json \
+            --consolewidth=150 --settag linux-amd64 \
+            --name linux-amd64 \
             ./performance_test.robot
 
       - name: Run Performance Check
         run: |
-          python test/lib/check_performance.py -i ./test/performance_record_${{ matrix.target }}_${{ matrix.arch }}.json
+          python test/lib/check_performance.py -i ./test/performance_record_linux_amd64.json
 
       - name: Print Report
         if: always()
@@ -550,7 +548,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
         with:
-          name: TEMP_${{ matrix.target }}_${{ matrix.arch }}
+          name: TEMP_linux_amd64
           path: ./performance_results.md
           retention-days: ${{ env.retention-days }}
   
@@ -558,16 +556,16 @@ jobs:
         if: always()
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
         with:
-          name: reports-${{ matrix.target }}-${{ matrix.arch }}
-          path: ./test/reports-${{ matrix.target }}-${{ matrix.arch }}
+          name: reports-linux-amd64
+          path: ./test/reports-linux-amd64
           retention-days: ${{ env.retention-days }}
 
       - name: Archive performance results
         if: always()
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
         with:
-          name: performance_record_${{ matrix.target }}_${{ matrix.arch }}
-          path: ./test/performance_record_${{ matrix.target }}_${{ matrix.arch }}.json
+          name: performance_record_linux_amd64
+          path: ./test/performance_record_linux_amd64.json
           retention-days: ${{ env.retention-days }}
 
   # merge-json:
