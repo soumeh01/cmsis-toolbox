@@ -522,51 +522,80 @@ jobs:
           cbuild2cmake -V
           cbuildgen -V
 
-      - name: Run Test
+      # - name: Run Test
+      #   shell: bash
+      #   continue-on-error: true
+      #   working-directory: ./test
+      #   run: |
+      #     export PATH="${{steps.toolbox_path.outputs.path}}:$PATH"
+      #     robot --outputdir reports-linux-amd64 \
+      #       --variable OUTPUT_FILE:performance_record_linux_amd64.json \
+      #       --consolewidth=150 --settag linux-amd64 \
+      #       --name linux-amd64 \
+      #       ./performance_test.robot
+
+      - name: Update dependencies
+        run: |
+            sudo apt-get update
+            sudo apt-get install -y hyperfine
+
+      - name: Clone All Examples
         shell: bash
         continue-on-error: true
         working-directory: ./test
         run: |
           export PATH="${{steps.toolbox_path.outputs.path}}:$PATH"
           robot --outputdir reports-linux-amd64 \
-            --variable OUTPUT_FILE:performance_record_linux_amd64.json \
-            --consolewidth=150 --settag linux-amd64 \
-            --name linux-amd64 \
+            --consolewidth=150 \
             ./performance_test.robot
 
-      - name: Run Performance Check
+      - name: Run benchmarks
+        working-directory: ./test
         run: |
-          python test/lib/check_performance.py -i ./test/performance_record_linux_amd64.json
+          export PATH="${{steps.toolbox_path.outputs.path}}:$PATH"
+          hyperfine --warmup 3 --min-runs 10 "cbuild ./performance_test_dir/csolution-examples/Hello/Hello.csolution.yml -p -S --update-rte --toolchain AC6" \
+                    "cbuild ./performance_test_dir/vscode-get-started/get_started.csolution.yml -p -S --update-rte --toolchain AC6" \
+                    --export-markdown benchmark_results.md --show-output
 
       - name: Print Report
         if: always()
-        shell: bash
+        working-directory: ./test
         run: |
-          cat performance_results.md >> $GITHUB_STEP_SUMMARY
+          cat benchmark_results.md >> $GITHUB_STEP_SUMMARY
 
-      - name: TEMP performance results
-        if: always()
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
-        with:
-          name: TEMP_linux_amd64
-          path: ./performance_results.md
-          retention-days: ${{ env.retention-days }}
+      # - name: Run Performance Check
+      #   run: |
+      #     python test/lib/check_performance.py -i ./test/performance_record_linux_amd64.json
+
+      # - name: Print Report
+      #   if: always()
+      #   shell: bash
+      #   run: |
+      #     cat performance_results.md >> $GITHUB_STEP_SUMMARY
+
+      # - name: TEMP performance results
+      #   if: always()
+      #   uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+      #   with:
+      #     name: TEMP_linux_amd64
+      #     path: ./performance_results.md
+      #     retention-days: ${{ env.retention-days }}
   
-      - name: Archieve robot test results
-        if: always()
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
-        with:
-          name: reports-linux-amd64
-          path: ./test/reports-linux-amd64
-          retention-days: ${{ env.retention-days }}
+      # - name: Archieve robot test results
+      #   if: always()
+      #   uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+      #   with:
+      #     name: reports-linux-amd64
+      #     path: ./test/reports-linux-amd64
+      #     retention-days: ${{ env.retention-days }}
 
-      - name: Archive performance results
-        if: always()
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
-        with:
-          name: performance_record_linux_amd64
-          path: ./test/performance_record_linux_amd64.json
-          retention-days: ${{ env.retention-days }}
+      # - name: Archive performance results
+      #   if: always()
+      #   uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+      #   with:
+      #     name: performance_record_linux_amd64
+      #     path: ./test/performance_record_linux_amd64.json
+      #     retention-days: ${{ env.retention-days }}
 
   # merge-json:
   #   runs-on: ubuntu-latest

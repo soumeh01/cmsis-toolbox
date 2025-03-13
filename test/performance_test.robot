@@ -4,7 +4,7 @@ Library           Collections
 Library           Process
 Library           String
 Suite Setup       Read And Clone Repositories
-Suite Teardown    Remove Directory with Content    ${CURDIR}/performance_test_dir
+# Suite Teardown    Remove Directory with Content    ${CURDIR}/performance_test_dir
 Resource          resources${/}exec.resource
 
 *** Variables ***
@@ -20,7 +20,7 @@ Record Command Execution Time
         ${expect}             Set Variable    ${data}[2]
         ${example_dir}        Set Variable    ${data}[3]
         ${expect_int}         Convert To Integer    ${expect}
-        Run Cbuild Setup      ${example_dir}${/}${csolution_file}    ${expect_int}    --perf-report=${OUTPUT_FILE}
+        # Run Cbuild Setup      ${example_dir}${/}${csolution_file}    ${expect_int}    --perf-report=${OUTPUT_FILE}
     END
 *** Keywords ***
 Read And Clone Repositories
