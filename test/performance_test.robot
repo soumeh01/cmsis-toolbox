@@ -4,12 +4,13 @@ Library           Collections
 Library           Process
 Library           String
 Suite Setup       Read And Clone Repositories
-# Suite Teardown    Remove Directory with Content    ${CURDIR}/performance_test_dir
+# Suite Teardown    Remove Directory with Content    ${CURDIR}${/}${CLONE_DIR}
 Resource          resources${/}exec.resource
 
 *** Variables ***
 ${INPUT_FILE}    input.csv
 ${OUTPUT_FILE}   performance_record.json    # Default value
+${CLONE_DIR}     performance_test_dir
 @{REPO_LIST}     # Stores cloned repository information
 
 *** Test Cases ***
@@ -42,7 +43,7 @@ Read And Clone Repositories
 
         # Clone the repository
         ${repo_name}    Evaluate    "${github_url}".split("/")[-1]
-        ${clone_path}    Set Variable    ${CURDIR}/performance_test_dir/${repo_name}
+        ${clone_path}    Set Variable    ${CURDIR}${/}${CLONE_DIR}${/}${repo_name}
 
         Checkout GitHub Repository    ${github_url}    ${clone_path}
         Run Process    git    clone    ${github_url}    ${clone_path}
