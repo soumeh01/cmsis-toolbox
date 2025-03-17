@@ -2,96 +2,72 @@ import json
 import sys
 import argparse
 
-# Define reference thresholds in milliseconds
-REFERENCE_THRESHOLDS = {
-    "windows": {
-        "Hello": 14995,
-        "vscode-get-started": 3280
-    },
-    "linux": {
-        "Hello": 9911,
-        "vscode-get-started": 1707
-    },
-    "darwin": {
-        "Hello": 12958,
-        "vscode-get-started": 2884
-    },
-    # Add other OS-specific thresholds if needed
-}
+PERMISSIBLE_LIMIT = 1.10  # Allow +10% tolerance
 
-PERMISSIBLE_LIMIT = 1.10  # Allow +10%
+def load_json_file(file_path: str) -> dict:
+    """
+    Load and parse a JSON file.
+    
+    Args:
+        file_path (str): Path to the JSON file.
 
-
-def load_json_file(file_path: str):
-    """Load and parse a JSON file."""
+    Returns:
+        dict: Parsed JSON data.
+    """
     try:
-        with open(file_path, "r") as file:
+        with open(file_path, "r", encoding="utf-8") as file:
             return json.load(file)
     except FileNotFoundError:
-        print(f"Error: File not found - {file_path}", file=sys.stderr)
+        sys.stderr.write(f"Error: File not found - {file_path}\n")
         sys.exit(1)
     except json.JSONDecodeError:
-        print(f"Error: Failed to parse JSON - {file_path}", file=sys.stderr)
+        sys.stderr.write(f"Error: Failed to parse JSON - {file_path}\n")
         sys.exit(1)
 
-def compare_performance_results(ref_file, curr_file):
-    ref_data = load_json_file(ref_file)
-    curr_data = load_json_file(curr_file)
 
-    # Compare results
+def compare_performance_results(ref_data: dict, curr_data: dict) -> list:
+    """
+    Compare reference and current performance data.
+
+    Args:
+        ref_data (dict): Reference JSON data.
+        curr_data (dict): Current JSON data.
+
+    Returns:
+        list: List of error messages if performance regressions are found.
+    """
     errors = []
-    for ref, curr in zip(ref_data["results"], curr_data["results"]):
-        command = curr_data["command"]
-        ref_time = ref["mean"]
-        curr_time = curr["mean"]
 
-        if curr_time > ref_time * PERMISSIBLE_LIMIT:
-            errors.append(f"⚠️ Performance regression detected in `{command}`: "
-                        f"{curr_time:.3f}s (was {ref_time:.3f}s)")
+    ref_results = ref_data.get("results", [])
+    curr_results = curr_data.get("results", [])
+
+    # Check if both JSON files contain results
+    if not ref_results or not curr_results:
+        sys.stderr.write("Error: Missing 'results' key or empty results in input JSON files.\n")
+        sys.exit(1)
+
+    # Ensure equal number of results
+    if len(ref_results) != len(curr_results):
+        sys.stderr.write("Warning: Mismatch in number of results between reference and current JSON files.\n")
+
+    for index, (ref, curr) in enumerate(zip(ref_results, curr_results)):
+        command = curr.get("command", f"Unknown Command (Index: {index})")
+        ref_time = ref.get("mean")
+        curr_time = curr.get("mean")
+
+        # Ensure 'mean' values exist
+        if ref_time is None or curr_time is None:
+            sys.stderr.write(f"Warning: Missing 'mean' value in results at index {index}.\n")
+            continue  # Skip invalid entries
+
+        permissible_limit = ref_time * PERMISSIBLE_LIMIT
+        if curr_time > permissible_limit:
+            errors.append(
+                f"⚠️ Performance regression detected in `{command}`: "
+                f"{curr_time:.3f}s (was {ref_time:.3f}s)"
+            )
+
     return errors
-    
-def compare_performance_results(perf_data):
-    """
-    Compare performance results against reference thresholds.
-    Returns a list of failure messages if any exceed the permissible limit.
-    """
-    failures = []
-
-    # Open file in write mode once to overwrite previous content
-    with open("performance_results.md", "w", encoding="utf-8") as f:
-        f.write("# Performance Report\n\n")
-        f.write("## Results\n\n")
-        f.write("|Test Example|OS Type|Threshold|Duration|Status|\n")
-        f.write("|:----:|:----:|:----:|:-----:|:---:|\n")
-
-    # Open file in append mode to avoid overwriting in the loop
-    with open("performance_results.md", "a", encoding="utf-8") as f:
-        for test in perf_data:
-            example = test.get("example", "Unknown Example")
-            os_type = test.get("os", "Unknown OS")
-            reference_threshold = REFERENCE_THRESHOLDS.get(os_type, {}).get(example)
-
-            if reference_threshold:
-                limit = reference_threshold * PERMISSIBLE_LIMIT
-
-                for record in test.get("performance", []):
-                    if record.get("tool") == "cbuild" and "setup" in record.get("args", []):
-                        time_ms = record.get("time_ms", 0)
-
-                        # Check if performance exceeds threshold
-                        if time_ms > limit:
-                            failures.append(
-                                f"cbuild setup exceeded limit for '{example}' ({os_type}): "
-                                f"{time_ms}ms > {limit:.2f}ms (Threshold: {reference_threshold}ms)"
-                            )
-                            status = "❌"  # Unicode character
-                        else:
-                            status = "✅"  # Unicode character
-
-                        # Write result to file
-                        f.write(f"|{example}|{os_type}|{limit:.2f}ms|{time_ms}ms|{status}|\n")
-
-    return failures
 
 
 def main():
@@ -102,18 +78,19 @@ def main():
 
     ref_data = load_json_file(args.reference_data_file)
     curr_data = load_json_file(args.current_data_file)
+
     failures = compare_performance_results(ref_data, curr_data)
 
     if failures:
         print("\n".join(failures))
         sys.exit(1)  # Fail the GitHub job
     else:
-        print("All cbuild setup executions are within permissible limits.")
+        print("✅ All cbuild setup executions are within permissible limits.")
 
 
 if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        print(f"An error occurred: {e}", file=sys.stderr)
+        sys.stderr.write(f"An error occurred: {e}\n")
         sys.exit(1)
