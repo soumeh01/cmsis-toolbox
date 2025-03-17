@@ -392,7 +392,9 @@ jobs:
           hyperfine --warmup 0 --min-runs 1 \
             "cbuild setup ./old_test_dir/csolution-examples/Hello/Hello.csolution.yml -p -S --update-rte --toolchain AC6" \
             "cbuild setup ./old_test_dir/vscode-get-started/get_started.csolution.yml -p -S --update-rte --toolchain AC6" \
-            --export-markdown released_benchmark_results.md --show-output
+            --export-markdown released_benchmark_results.md \
+            --export-json released_benchmark_results.json \
+            --show-output
 
       - name: Print released report
         if: always()
@@ -400,7 +402,7 @@ jobs:
         run: |
           cat released_benchmark_results.md >> $GITHUB_STEP_SUMMARY
 
-      # - name: Delete example dire
+      # - name: Delete example dir
       #   working-directory: ./test
       #   run: |
       #     rm -rf performance_test_dir
@@ -466,14 +468,18 @@ jobs:
           hyperfine --warmup 0 --min-runs 1 \
             "cbuild setup ./new_test_dir/csolution-examples/Hello/Hello.csolution.yml -p -S --update-rte --toolchain AC6" \
             "cbuild setup ./new_test_dir/vscode-get-started/get_started.csolution.yml -p -S --update-rte --toolchain AC6" \
-            --export-markdown benchmark_results.md --show-output
-          echo "$CMSIS_PACK_ROOT"
+            --export-markdown curr_benchmark_results.md \
+            --export-json curr_benchmark_results.json \
+            --show-output
 
       - name: Print Report
         if: always()
         working-directory: ./test
         run: |
-          cat benchmark_results.md >> $GITHUB_STEP_SUMMARY
+          cat curr_benchmark_results.md >> $GITHUB_STEP_SUMMARY
+
+      - name: Compare Benchmark Results
+        run: python compare_hyperfine.py -r released_benchmark_results.json -c curr_benchmark_results.json
 
       # - name: Run Performance Check
       #   run: |

@@ -34,7 +34,22 @@ def load_json_file(file_path: str):
         print(f"Error: Failed to parse JSON - {file_path}", file=sys.stderr)
         sys.exit(1)
 
+def compare_performance_results(ref_file, curr_file):
+    ref_data = load_json_file(ref_file)
+    curr_data = load_json_file(curr_file)
 
+    # Compare results
+    errors = []
+    for ref, curr in zip(ref_data["results"], curr_data["results"]):
+        command = curr_data["command"]
+        ref_time = ref["mean"]
+        curr_time = curr["mean"]
+
+        if curr_time > ref_time * PERMISSIBLE_LIMIT:
+            errors.append(f"⚠️ Performance regression detected in `{command}`: "
+                        f"{curr_time:.3f}s (was {ref_time:.3f}s)")
+    return errors
+    
 def compare_performance_results(perf_data):
     """
     Compare performance results against reference thresholds.
@@ -81,11 +96,13 @@ def compare_performance_results(perf_data):
 
 def main():
     parser = argparse.ArgumentParser(description="Compare performance results")
-    parser.add_argument("-i", "--perf_result_file", type=str, required=True, help="Path to performance result JSON file")
+    parser.add_argument("-r", "--reference_data_file", type=str, required=True, help="Path to reference JSON file")
+    parser.add_argument("-c", "--current_data_file", type=str, required=True, help="Path to current JSON file")
     args = parser.parse_args()
 
-    perf_data = load_json_file(args.perf_result_file)
-    failures = compare_performance_results(perf_data)
+    ref_data = load_json_file(args.reference_data_file)
+    curr_data = load_json_file(args.current_data_file)
+    failures = compare_performance_results(ref_data, curr_data)
 
     if failures:
         print("\n".join(failures))
