@@ -35,9 +35,9 @@ jobs:
           cache: "-"
 
       - name: Activate Arm tool license
+        working-directory: ./test
         run: |
           armlm activate --server https://mdk-preview.keil.arm.com --product KEMDK-COM0
-        working-directory: ./test
 
       - name: Binary version info
         shell: bash
