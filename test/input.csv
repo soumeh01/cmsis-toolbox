@@ -1,0 +1,3 @@
+github_url,file_path,expectation
+https://github.com/Open-CMSIS-Pack/csolution-examples,Hello/Hello.csolution.yml,0
+https://github.com/Open-CMSIS-Pack/vscode-get-started,get_started.csolution.yml,0
