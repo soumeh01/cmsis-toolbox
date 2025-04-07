@@ -2,7 +2,7 @@ import json
 import sys
 import argparse
 
-PERMISSIBLE_LIMIT = 1.20  # Allow +20% tolerance
+PERMISSIBLE_LIMIT = 1.10  # Allow +20% tolerance
 
 def load_json_file(file_path: str) -> dict:
     """

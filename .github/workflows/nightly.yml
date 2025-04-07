@@ -396,9 +396,9 @@ jobs:
       - name: Run old benchmark
         working-directory: ./test
         run: |
-          hyperfine --runs 1 \
-            "cbuild setup ./old_test_dir/csolution-examples/Hello/Hello.csolution.yml -p -S --update-rte --toolchain GCC" \
-            "cbuild setup ./old_test_dir/vscode-get-started/get_started.csolution.yml -p -S --update-rte --toolchain GCC" \
+          hyperfine --warmup 3 --runs 5 \
+            "cbuild setup ./old_test_dir/csolution-examples/Hello/Hello.csolution.yml -p -S --update-rte --toolchain AC6" \
+            "cbuild setup ./old_test_dir/vscode-get-started/get_started.csolution.yml -p -S --update-rte --toolchain AC6" \
             --export-markdown released_benchmark_results.md \
             --export-json released_benchmark_results.json \
             --show-output
@@ -469,9 +469,9 @@ jobs:
         run: |
           export PATH="${{steps.toolbox_path.outputs.path}}:$PATH"
           export CMSIS_PACK_ROOT="$(pwd)/local_pack_root"
-          hyperfine --runs 1 \
-            "cbuild setup ./new_test_dir/csolution-examples/Hello/Hello.csolution.yml -p -S --update-rte --toolchain GCC" \
-            "cbuild setup ./new_test_dir/vscode-get-started/get_started.csolution.yml -p -S --update-rte --toolchain GCC" \
+          hyperfine --warmup 3 --runs 5 \
+            "cbuild setup ./new_test_dir/csolution-examples/Hello/Hello.csolution.yml -p -S --update-rte --toolchain AC6" \
+            "cbuild setup ./new_test_dir/vscode-get-started/get_started.csolution.yml -p -S --update-rte --toolchain AC6" \
             --export-markdown curr_benchmark_results.md \
             --export-json curr_benchmark_results.json \
             --show-output
