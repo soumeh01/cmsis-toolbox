@@ -26,8 +26,10 @@ Run cbuild
     [Arguments]                    ${input_file}    ${command}    ${args}=@{EMPTY}
     Append To List                 ${args}    -p    -r    --update-rte
     ${is_command_empty}=           Evaluate    '${command}' == '${EMPTY}'
-    ${ret_code}=    Run Keyword If    ${is_command_empty}    Run Program    cbuild    ${input_file}    @{args}
-    ...    ELSE    Run Program    cbuild    ${input_file}    @{args}    ${command}
+    ${ret_code}=    Run Keyword If    ${is_command_empty}
+    ...    Run Program    cbuild    ${input_file}    @{args}
+    ...    ELSE
+    ...    Run Program    cbuild    ${input_file}    @{args}    ${command}
     RETURN                         ${ret_code}
 
 Build Example With cbuildgen
@@ -147,3 +149,13 @@ Convert And Filter Contexts
     END
 
     RETURN    ${context_list_args}
+
+Run Cbuild Setup
+    [Arguments]         ${input_file}    ${expect}        @{args}
+    ${args_Ex}=         Copy List        ${args}
+    Append To List      ${args_Ex}    -S    --update-rte    -p    --toolchain    AC6
+    ${result}           Run Process
+    ...    cbuild     setup    ${input_File}        @{args_Ex}
+    ...    shell=True    stdout=${CURDIR}/stdout.txt
+    ${ret_code}         Set Variable If    ${result.rc} == 0    ${result.rc}    ${1}
+    Log Many            StdOut: ${result.stdout}
