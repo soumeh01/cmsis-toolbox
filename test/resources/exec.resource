@@ -31,11 +31,11 @@ Run cbuild
     Append To List                 ${args_ex}    -p    -r    --update-rte
 
     ${is_command_empty}=           Evaluate    '${command}' == '${EMPTY}'
-    ${ret_code}=    Run Keyword If    ${is_command_empty}
+    ${ret_code}=                   Run Keyword If    ${is_command_empty}
     ...    Run Program    cbuild    ${input_file}    @{args_ex}
     ...    ELSE
     ...    Run Program    cbuild    ${input_file}    @{args_ex}    ${command}
-    RETURN 
+    RETURN                         ${ret_code}
 
 # Run cbuild
 #     [Documentation]                Execute cbuild command with specified arguments
@@ -148,21 +148,21 @@ Convert And Filter Contexts
     [Arguments]        ${all_contexts}
 
     ${os}=             Get Operating System
-    @{lines}=          Split String    ${all_contexts}    \n
+    @{contexts}=       Split String    ${all_contexts}    \n
 
     # Filter out items containing '+IAR'
-    @{filtered_lines}=    Create List
-    FOR    ${line}    IN    @{lines}
-        log    ${line}
-        ${result}=    Run Keyword And Return Status    Should Contain    ${line}    IAR
-        Run Keyword If    '${os}' == 'Darwin' and ${result}==True    Continue For Loop
-        Append To List    ${filtered_lines}    ${line}
+    @{filtered_contexts}=    Create List
+    FOR    ${context}    IN    @{contexts}
+        log    ${context}
+        ${context_lower}=    Convert To Lower Case    ${context}
+        ${result}=    Run Keyword And Return Status    Should Contain    ${context_lower}    iar
+        Run Keyword If    '${os}' != 'Darwin' and ${result} is ${FALSE}    Append To List    ${filtered_contexts}    ${context}
     END
 
     # Prefix remaining items with '-c ' and join them
     @{context_list_args}=    Create List
-    FOR    ${line}    IN    @{filtered_lines}
-        Append To List    ${context_list_args}    -c    ${line}
+    FOR    ${context}    IN    @{filtered_contexts}
+        Append To List    ${context_list_args}    -c    ${context}
     END
 
     RETURN    ${context_list_args}
