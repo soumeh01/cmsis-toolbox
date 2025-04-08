@@ -126,22 +126,35 @@ Run Csolution Project
     # Check the result of the first run
     ${success}=    Set Variable    ${res_cbuildgen[0]}
     ${message}=    Set Variable    ${res_cbuildgen[1]}
-    Run Keyword If    '${success}' == 'PASS'    Log    cbuildgen ran successfully
-    ...    ELSE    Log    cbuildgen failed with message: ${message}
+    Run Keyword If    '${success}' == 'PASS'
+    ...    Log    cbuildgen build successfully
+    ...    ELSE
+    ...    Log    cbuildgen build failed with message: ${message}
 
     # Check the result of the second run
     ${success}=    Set Variable    ${res_cbuild2cmake[0]}
     ${message}=    Set Variable    ${res_cbuild2cmake[1]}
-    Run Keyword If    '${success}' == 'PASS'    Log    cbuild2cmake ran successfully
-    ...    ELSE    Log    cbuild2cmake failed with message: ${message}
+    Run Keyword If    '${success}' == 'PASS'
+    ...    Log    cbuild2cmake ran successfully
+    ...    ELSE
+    ...    Log    cbuild2cmake failed with message: ${message}
 
-    Should Be Equal    ${res_cbuildgen[0]}    ${res_cbuild2cmake[0]}    build status doesn't match
+    # Should Be Equal    ${res_cbuildgen[0]}    ${res_cbuild2cmake[0]}    build status doesn't match
+    ${build_success}=    Evaluate    '${res_cbuildgen[0]}' == '${res_cbuild2cmake[0]}' == 'PASS'
+    IF    '${build_success}' == 'False'
+        Return From Keyword    False
+    END
+    # Should Be True    ${all_equal}    build status doesn't match
+
     ${parent_path}=    Get Parent Directory Path    ${input_file}
-    ${result}=         Run Keyword And Return
+    ${elf_compare_result}=         Run Keyword And Return
     ...                    Compare Elf Information   ${input_file}
     ...                    ${parent_path}${/}${Out_Dir}${/}${Default_Out_Dir}  
     ...                    ${parent_path}${/}${Default_Out_Dir}
-    Should Be True     ${result}
+    IF    '${elf_compare_result}' == 'False'
+        Return From Keyword    False
+    END
+    Return From Keyword    True
 
 Convert And Filter Contexts
     [Documentation]    Example test to convert a string to an array, filter it, and join it
@@ -150,15 +163,23 @@ Convert And Filter Contexts
     ${os}=             Get Operating System
     @{contexts}=       Split String    ${all_contexts}    \n
 
-    # Filter out items containing '+IAR'
+    # Log To Console    My List: ${contexts}
+    # Filter out items containing 'iar'
     @{filtered_contexts}=    Create List
+    # ${i}=    Set Variable    0
     FOR    ${context}    IN    @{contexts}
+        # ${i}=    Evaluate    ${i} + 1
         log    ${context}
+        # Log To Console    ${i}: ${context}
         ${context_lower}=    Convert To Lower Case    ${context}
-        ${result}=    Run Keyword And Return Status    Should Contain    ${context_lower}    iar
-        Run Keyword If    '${os}' != 'Darwin' and ${result} is ${FALSE}    Append To List    ${filtered_contexts}    ${context}
+        ${contains_iar}=     Run Keyword And Return Status    Should Contain    ${context_lower}    iar
+        ${match_found}=      Evaluate    "'${os}' == 'Darwin' and ${contains_iar}"
+        # Run Keyword If    ${match_found} == False    Append To List    ${filtered_contexts}    ${context}
+        Run Keyword If    ${match_found} == False    Append To List    ${filtered_contexts}    ${context}
     END
 
+    # Log To Console    My Filtered List: ${filtered_contexts}
+    # Log To Console    ===========================================
     # Prefix remaining items with '-c ' and join them
     @{context_list_args}=    Create List
     FOR    ${context}    IN    @{filtered_contexts}

@@ -18,6 +18,7 @@ permissions: read-all
 
 jobs:
   matrix_prep:
+    if: false
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}

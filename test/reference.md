@@ -22,7 +22,7 @@
 |windows-amd64|Validate pre-include Example|7.22 s|Local Example Tests|
 |windows-amd64|Validate whitespace Example|6.97 s|Local Example Tests|
 |windows-amd64|Validate trustzone Example|48.04 s|Local Example Tests|
-|windows-amd64|NXP::LPCXpresso55S69_BSP.18.0.0|955.02 s|Pack Example Tests|
+|windows-amd64|NXP::LPCXpresso55S69_BSP.19.0.0|955.02 s|Pack Example Tests|
 |windows-amd64|Hello_FRDM-K32L3A6|35.11 s|Remote Example Tests|
 |windows-amd64|Hello_LPCXpresso55S69|30.37 s|Remote Example Tests|
 |windows-amd64|Csolution-examples|27.52 s|Remote Example Tests|
@@ -40,7 +40,7 @@
 |linux-amd64|Validate pre-include Example|1.78 s|Local Example Tests|
 |linux-amd64|Validate whitespace Example|1.67 s|Local Example Tests|
 |linux-amd64|Validate trustzone Example|7.48 s|Local Example Tests|
-|linux-amd64|NXP::LPCXpresso55S69_BSP.18.0.0|754.88 s|Pack Example Tests|
+|linux-amd64|NXP::LPCXpresso55S69_BSP.19.0.0|754.88 s|Pack Example Tests|
 |linux-amd64|Hello_FRDM-K32L3A6|13.17 s|Remote Example Tests|
 |linux-amd64|Hello_LPCXpresso55S69|10.68 s|Remote Example Tests|
 |linux-amd64|Csolution-examples|14.93 s|Remote Example Tests|
@@ -58,7 +58,7 @@
 |darwin-amd64|Validate pre-include Example|6.12 s|Local Example Tests|
 |darwin-amd64|Validate whitespace Example|5.62 s|Local Example Tests|
 |darwin-amd64|Validate trustzone Example|22.82 s|Local Example Tests|
-|darwin-amd64|NXP::LPCXpresso55S69_BSP.18.0.0|1559.94 s|Pack Example Tests|
+|darwin-amd64|NXP::LPCXpresso55S69_BSP.19.0.0|1559.94 s|Pack Example Tests|
 |darwin-amd64|Hello_FRDM-K32L3A6|26.55 s|Remote Example Tests|
 |darwin-amd64|Hello_LPCXpresso55S69|22.71 s|Remote Example Tests|
 |darwin-amd64|Csolution-examples|28.29 s|Remote Example Tests|
