@@ -81,6 +81,14 @@ jobs:
 
       - name: Run Test
         shell: bash
+        env:
+          IAR_LMS_BEARER_TOKEN: ${{ secrets.IAR_TOKEN }}
+        run: |
+          cbuild --version
+          cbuild ./test/data/build-c/solution.csolution.yml -p -r --update-rte
+
+      - name: Run Test
+        shell: bash
         continue-on-error: true
         env:
           IAR_LMS_BEARER_TOKEN: ${{ secrets.IAR_TOKEN }}
