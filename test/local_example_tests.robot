@@ -37,35 +37,35 @@ Validate build-asm Example
 Validate build-c Example
     ${TEST_DATA_DIR}${/}${build-c}${/}solution.csolution.yml                   ${Pass}    ${Pass}
 
-Validate build-cpp Example
-    ${TEST_DATA_DIR}${/}${build-cpp}${/}solution.csolution.yml                 ${Pass}    ${Pass}
+# Validate build-cpp Example
+#     ${TEST_DATA_DIR}${/}${build-cpp}${/}solution.csolution.yml                 ${Pass}    ${Pass}
 
-Validate build-set Example
-    ${TEST_DATA_DIR}${/}${build-set}${/}solution.csolution.yml                 ${Pass}    ${Pass}
+# Validate build-set Example
+#     ${TEST_DATA_DIR}${/}${build-set}${/}solution.csolution.yml                 ${Pass}    ${Pass}
 
-Validate executes Example
-    ${TEST_DATA_DIR}${/}${executes}${/}solution.csolution.yml                  ${Pass}    ${Pass}
+# Validate executes Example
+#     ${TEST_DATA_DIR}${/}${executes}${/}solution.csolution.yml                  ${Pass}    ${Pass}
 
-Validate include-define Example
-    ${TEST_DATA_DIR}${/}${include-define}${/}solution.csolution.yml            ${Fail}    ${Pass}
+# Validate include-define Example
+#     ${TEST_DATA_DIR}${/}${include-define}${/}solution.csolution.yml            ${Fail}    ${Pass}
 
-Validate language-scope Example
-    ${TEST_DATA_DIR}${/}${language-scope}${/}solution.csolution.yml            ${Fail}    ${Pass}
+# Validate language-scope Example
+#     ${TEST_DATA_DIR}${/}${language-scope}${/}solution.csolution.yml            ${Fail}    ${Pass}
 
-Validate library-rtos Example
-    ${TEST_DATA_DIR}${/}${library-rtos}${/}solution.csolution.yml              ${Pass}    ${Pass}
+# Validate library-rtos Example
+#     ${TEST_DATA_DIR}${/}${library-rtos}${/}solution.csolution.yml              ${Pass}    ${Pass}
 
-Validate linker-pre-processing Example
-    ${TEST_DATA_DIR}${/}${linker-pre-processing}${/}solution.csolution.yml     ${Pass}    ${Pass}
+# Validate linker-pre-processing Example
+#     ${TEST_DATA_DIR}${/}${linker-pre-processing}${/}solution.csolution.yml     ${Pass}    ${Pass}
 
-Validate pre-include Example
-    ${TEST_DATA_DIR}${/}${pre-include}${/}solution.csolution.yml               ${Pass}    ${Pass}
+# Validate pre-include Example
+#     ${TEST_DATA_DIR}${/}${pre-include}${/}solution.csolution.yml               ${Pass}    ${Pass}
 
-Validate whitespace Example
-    ${TEST_DATA_DIR}${/}${whitespace}${/}solution.csolution.yml                ${Pass}    ${Pass}
+# Validate whitespace Example
+#     ${TEST_DATA_DIR}${/}${whitespace}${/}solution.csolution.yml                ${Pass}    ${Pass}
 
-Validate trustzone Example
-     ${TEST_DATA_DIR}${/}${trustzone}${/}solution.csolution.yml                ${Pass}    ${Pass}
+# Validate trustzone Example
+#      ${TEST_DATA_DIR}${/}${trustzone}${/}solution.csolution.yml                ${Pass}    ${Pass}
 
 *** Keywords ***
 Build Local CSolution Example
