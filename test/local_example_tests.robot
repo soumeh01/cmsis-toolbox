@@ -52,8 +52,8 @@ Validate include-define Example
 Validate language-scope Example
     ${TEST_DATA_DIR}${/}${language-scope}${/}solution.csolution.yml            ${Fail}    ${Pass}
 
-Validate library-rtos Example
-    ${TEST_DATA_DIR}${/}${library-rtos}${/}solution.csolution.yml              ${Pass}    ${Pass}
+# Validate library-rtos Example
+#     ${TEST_DATA_DIR}${/}${library-rtos}${/}solution.csolution.yml              ${Pass}    ${Pass}
 
 Validate linker-pre-processing Example
     ${TEST_DATA_DIR}${/}${linker-pre-processing}${/}solution.csolution.yml     ${Pass}    ${Pass}

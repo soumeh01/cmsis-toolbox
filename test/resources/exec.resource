@@ -163,23 +163,17 @@ Convert And Filter Contexts
     ${os}=             Get Operating System
     @{contexts}=       Split String    ${all_contexts}    \n
 
-    # Log To Console    My List: ${contexts}
     # Filter out items containing 'iar'
     @{filtered_contexts}=    Create List
     # ${i}=    Set Variable    0
     FOR    ${context}    IN    @{contexts}
-        # ${i}=    Evaluate    ${i} + 1
         log    ${context}
-        # Log To Console    ${i}: ${context}
         ${context_lower}=    Convert To Lower Case    ${context}
         ${contains_iar}=     Run Keyword And Return Status    Should Contain    ${context_lower}    iar
         ${match_found}=      Evaluate    "'${os}' == 'Darwin' and ${contains_iar}"
-        # Run Keyword If    ${match_found} == False    Append To List    ${filtered_contexts}    ${context}
         Run Keyword If    ${match_found} == False    Append To List    ${filtered_contexts}    ${context}
     END
 
-    # Log To Console    My Filtered List: ${filtered_contexts}
-    # Log To Console    ===========================================
     # Prefix remaining items with '-c ' and join them
     @{context_list_args}=    Create List
     FOR    ${context}    IN    @{filtered_contexts}

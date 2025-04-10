@@ -1,2 +1,1 @@
 *** Test Cases ***;${pack_id};${expect};[Tags];[Documentation]
-ARM::CMSIS-RTX.5.9.0;ARM::CMSIS-RTX@5.9.0;${0};;

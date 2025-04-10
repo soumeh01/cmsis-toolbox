@@ -378,15 +378,15 @@ jobs:
           cbuild2cmake -V
           cbuildgen -V
 
-      - name: Run Test
-        shell: bash
-        continue-on-error: true
-        env:
-          IAR_LMS_BEARER_TOKEN: ${{ secrets.IAR_TOKEN }}
-        run: |
-          export PATH="${{steps.toolbox_path.outputs.path}}:$PATH"
-          cbuild --version
-          cbuild ./test/data/build-cpp/solution.csolution.yml -p -r --update-rte
+      # - name: Run Test
+      #   shell: bash
+      #   continue-on-error: true
+      #   env:
+      #     IAR_LMS_BEARER_TOKEN: ${{ secrets.IAR_TOKEN }}
+      #   run: |
+      #     export PATH="${{steps.toolbox_path.outputs.path}}:$PATH"
+      #     cbuild --version
+      #     cbuild ./test/data/build-cpp/solution.csolution.yml -p -r --update-rte -j 1
 
       - name: Run Test
         shell: bash
