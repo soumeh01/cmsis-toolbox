@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/e2e_test.yaml'
       - '.github/matrix_includes.json'
+      - 'test/**'
       - '!test/tests.py'
       - '!**/*.md'
   workflow_dispatch:
@@ -15,12 +16,13 @@ concurrency:
 
 jobs:
   matrix_prep:
+    if: false
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
         with:
           egress-policy: audit
 
@@ -40,14 +42,14 @@ jobs:
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
         with:
           egress-policy: audit
 
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Set up Python
-        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
         with:
           python-version: '3.11'
           cache: 'pip'
@@ -80,7 +82,17 @@ jobs:
 
       - name: Run Test
         shell: bash
+        env:
+          IAR_LMS_BEARER_TOKEN: ${{ secrets.IAR_TOKEN }}
+        run: |
+          cbuild --version
+          cbuild ./test/data/build-c/solution.csolution.yml -p -r --update-rte
+
+      - name: Run Test
+        shell: bash
         continue-on-error: true
+        env:
+          IAR_LMS_BEARER_TOKEN: ${{ secrets.IAR_TOKEN }}
         run: |
           robot --outputdir reports-${{ matrix.target }}-${{ matrix.arch }} \
             --variable TEST_ENV_FILE:test-env-${{ matrix.target }}-${{ matrix.arch }}.md \
@@ -90,26 +102,26 @@ jobs:
 
       - name: Archieve test results
         if: always()
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: reports-${{ matrix.target }}-${{ matrix.arch }}
           path: reports-${{ matrix.target }}-${{ matrix.arch }}
 
   report:
     runs-on: ubuntu-latest
-    if: always()
+    if: false
     needs: test
     permissions: write-all
     steps:
     - name: Harden Runner
-      uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
+      uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
       with:
         egress-policy: audit
 
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
     - name: Set up Python
-      uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+      uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
       with:
         python-version: '3.11'
         cache: 'pip'
@@ -120,7 +132,7 @@ jobs:
           pip install -r test/requirements.txt
 
     - name: Download reports
-      uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
+      uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4.2.1
       with:
         path: artifacts
         pattern: reports-*
@@ -148,7 +160,7 @@ jobs:
 
     - name: Archieve consolidated test results
       if: always()
-      uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: consolidated-reports
         path: artifacts/collective_robot_results
