@@ -311,14 +311,156 @@ jobs:
           path: ./debian/build/cmsis-toolbox_*_amd64.deb
           retention-days: ${{ env.retention-days }}
 
-  run-tests:
-    needs: [ matrix_prep, create-toolbox ]
-    runs-on: ${{ matrix.runs_on }}
-    continue-on-error: true
-    strategy:
-      matrix: ${{ fromJson(needs.matrix_prep.outputs.matrix) }}
+  # run-tests:
+  #   needs: [ matrix_prep, create-toolbox ]
+  #   runs-on: ${{ matrix.runs_on }}
+  #   continue-on-error: true
+  #   strategy:
+  #     matrix: ${{ fromJson(needs.matrix_prep.outputs.matrix) }}
 
-    steps:     
+  #   steps:     
+  #     - name: Harden Runner
+  #       uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
+  #       with:
+  #         egress-policy: audit
+
+  #     - name: Checkout toolbox repository
+  #       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+    
+  #     - name: Set up Python
+  #       uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+  #       with:
+  #         python-version: '3.11'
+  #         cache: 'pip'
+    
+  #     - name: Install pip dependencies
+  #       run: |
+  #           pip install --upgrade pip
+  #           pip install -r test/requirements.txt
+
+  #     - name: Setup vcpkg environment
+  #       uses: ARM-software/cmsis-actions/vcpkg@f608f32a6d83e90d79e1f2bbb7812fdb94bf1679 # v1
+  #       with:
+  #         config: "./test/vcpkg-configuration.json"
+  #         vcpkg-downloads: "${{ github.workspace }}/.vcpkg/downloads"
+  #         cache: "-"
+    
+  #     - name: Activate Arm tool license
+  #       run: |
+  #         armlm activate --server https://mdk-preview.keil.arm.com --product KEMDK-COM0
+  #       working-directory: ./test
+
+  #     - name: Download cmsis toolbox ${{ matrix.target }} ${{ matrix.arch }}
+  #       uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
+  #       with:
+  #         name: cmsis-toolbox-${{ matrix.target }}-${{ matrix.arch }}
+  #         path: cmsis-toolbox
+
+  #     - name: Set execution permissions
+  #       run: |
+  #         chmod -R +x ./cmsis-toolbox/bin/*
+
+  #     - name: Get toolbox path
+  #       if: always()
+  #       id: toolbox_path
+  #       shell: bash
+  #       run: |
+  #         echo "path=$(echo "$(pwd)/cmsis-toolbox/bin")" >> $GITHUB_OUTPUT
+
+  #     - name: Binary version info
+  #       if: always()
+  #       shell: bash
+  #       run: |
+  #         export PATH="${{steps.toolbox_path.outputs.path}}:$PATH"
+  #         csolution -V
+  #         cpackget -V
+  #         cbuild -V
+  #         cbuild2cmake -V
+  #         cbuildgen -V
+
+  #     - name: Run Test
+  #       shell: bash
+  #       continue-on-error: true
+  #       run: |
+  #         export PATH="${{steps.toolbox_path.outputs.path}}:$PATH"
+  #         robot --outputdir reports-${{ matrix.target }}-${{ matrix.arch }} \
+  #           --variable TEST_ENV_FILE:test-env-${{ matrix.target }}-${{ matrix.arch }}.md \
+  #           --consolewidth=150 --settag ${{ matrix.target }}-${{ matrix.arch }} \
+  #           --name ${{ matrix.target }}-${{ matrix.arch }} \
+  #           ./test
+
+  #     - name: Archieve test results
+  #       if: always()
+  #       uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+  #       with:
+  #         name: reports-${{ matrix.target }}-${{ matrix.arch }}
+  #         path: reports-${{ matrix.target }}-${{ matrix.arch }}
+  #         retention-days: ${{ env.retention-days }}
+
+  # consolidate-report:
+  #   if: always()
+  #   needs: [run-tests]
+  #   runs-on: ubuntu-latest
+  #   permissions: write-all
+
+  #   steps:
+  #   - name: Harden Runner
+  #     uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
+  #     with:
+  #       egress-policy: audit
+
+  #   - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+  #   - name: Set up Python
+  #     uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+  #     with:
+  #       python-version: '3.11'
+  #       cache: 'pip'
+
+  #   - name: Install pip dependencies
+  #     run: |
+  #         pip install --upgrade pip
+  #         pip install -r test/requirements.txt
+
+  #   - name: Download reports
+  #     uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
+  #     with:
+  #       path: artifacts
+  #       pattern: reports-*
+
+  #   - name: Consolidate robot test results
+  #     working-directory: artifacts
+  #     continue-on-error: true
+  #     run: |
+  #       python -m robot.rebot --name Collective_Robot_Results --outputdir collective_robot_results --output output.xml \
+  #         ./reports-windows-amd64/output.xml \
+  #         ./reports-linux-amd64/output.xml \
+  #         ./reports-darwin-amd64/output.xml
+
+  #   - name: Generate Summary report
+  #     if: always()
+  #     run: |
+  #       python ./test/lib/execution_summary.py artifacts \
+  #         -r ./test/reference.md \
+  #         -o artifacts/collective_robot_results/output.xml \
+  #         -m summary_report.md
+
+  #   - name: Print E2E Report
+  #     if: always()
+  #     run: cat summary_report.md >> $GITHUB_STEP_SUMMARY
+
+  #   - name: Archieve consolidated test results
+  #     if: always()
+  #     uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+  #     with:
+  #       name: consolidated-reports
+  #       path: artifacts/collective_robot_results
+  #       retention-days: ${{ env.retention-days }}
+
+  performance-test:
+    needs: [ matrix_prep, create-toolbox ]
+    runs-on: [ ubuntu-latest ]
+    steps:
       - name: Harden Runner
         uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
         with:
@@ -326,13 +468,13 @@ jobs:
 
       - name: Checkout toolbox repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-    
+
       - name: Set up Python
         uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
         with:
           python-version: '3.11'
           cache: 'pip'
-    
+
       - name: Install pip dependencies
         run: |
             pip install --upgrade pip
@@ -344,115 +486,161 @@ jobs:
           config: "./test/vcpkg-configuration.json"
           vcpkg-downloads: "${{ github.workspace }}/.vcpkg/downloads"
           cache: "-"
-    
-      - name: Activate Arm tool license
-        run: |
-          armlm activate --server https://mdk-preview.keil.arm.com --product KEMDK-COM0
-        working-directory: ./test
 
-      - name: Download cmsis toolbox ${{ matrix.target }} ${{ matrix.arch }}
-        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
-        with:
-          name: cmsis-toolbox-${{ matrix.target }}-${{ matrix.arch }}
-          path: cmsis-toolbox
-
-      - name: Set execution permissions
-        run: |
-          chmod -R +x ./cmsis-toolbox/bin/*
-
-      - name: Get toolbox path
-        if: always()
-        id: toolbox_path
-        shell: bash
-        run: |
-          echo "path=$(echo "$(pwd)/cmsis-toolbox/bin")" >> $GITHUB_OUTPUT
-
-      - name: Binary version info
+      - name: Print released binary version info
         if: always()
         shell: bash
         run: |
-          export PATH="${{steps.toolbox_path.outputs.path}}:$PATH"
           csolution -V
           cpackget -V
           cbuild -V
           cbuild2cmake -V
           cbuildgen -V
 
-      - name: Run Test
-        shell: bash
-        continue-on-error: true
+      - name: Activate Arm tool license
         run: |
-          export PATH="${{steps.toolbox_path.outputs.path}}:$PATH"
-          robot --outputdir reports-${{ matrix.target }}-${{ matrix.arch }} \
-            --variable TEST_ENV_FILE:test-env-${{ matrix.target }}-${{ matrix.arch }}.md \
-            --consolewidth=150 --settag ${{ matrix.target }}-${{ matrix.arch }} \
-            --name ${{ matrix.target }}-${{ matrix.arch }} \
-            ./test
+          armlm activate --server https://mdk-preview.keil.arm.com --product KEMDK-COM0
+        working-directory: ./test
 
-      - name: Archieve test results
-        if: always()
+      - name: Update dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y hyperfine
+
+      - name: Read Config and Clone Repositories
+        shell: bash
+        working-directory: ./test
+        run: |
+          set -x  # Enable debugging
+          mkdir -p old_test_dir
+          cat repos.txt | tr -d '\r' > repos_clean.txt  # Ensure no Windows line endings
+          while IFS= read -r repo || [[ -n "$repo" ]]; do
+            if [[ -n "$repo" ]]; then
+              echo "Cloning $repo..."
+              git clone "$repo" "old_test_dir/$(basename "$repo" .git)" || echo "Failed to clone $repo"
+            fi
+          done < repos_clean.txt
+
+      # - name: Clone Input Examples
+      #   shell: bash
+      #   continue-on-error: true
+      #   working-directory: ./test
+      #   run: |
+      #     robot --outputdir test-reports-linux-amd64 \
+      #       --variable CLONE_DIR:old_test_dir \
+      #       --consolewidth=150 \
+      #       ./performance_test.robot
+
+      # - name: Archieve robot test results
+      #   if: always()
+      #   uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+      #   with:
+      #     name: test-reports-linux-amd64
+      #     path: ./test/test-reports-linux-amd64
+      #     retention-days: ${{ env.retention-days }}
+
+      - name: Run old benchmark
+        working-directory: ./test
+        run: |
+          hyperfine --warmup 3 --runs 5 \
+            "cbuild setup ./old_test_dir/csolution-examples/Hello/Hello.csolution.yml -p -S --update-rte --toolchain AC6" \
+            "cbuild setup ./old_test_dir/vscode-get-started/get_started.csolution.yml -p -S --update-rte --toolchain AC6" \
+            --export-markdown released_benchmark_results.md \
+            --export-json released_benchmark_results.json \
+            --show-output
+
+      - name: Archive JSON Package
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
         with:
-          name: reports-${{ matrix.target }}-${{ matrix.arch }}
-          path: reports-${{ matrix.target }}-${{ matrix.arch }}
-          retention-days: ${{ env.retention-days }}
+          name: old_test_json
+          path: ./test/released_benchmark_results.json
 
-  consolidate-report:
-    if: always()
-    needs: [run-tests]
-    runs-on: ubuntu-latest
-    permissions: write-all
+      - name: Print old benchmark report
+        if: always()
+        working-directory: ./test
+        run: |
+          cat released_benchmark_results.md >> $GITHUB_STEP_SUMMARY
 
-    steps:
-    - name: Harden Runner
-      uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
-      with:
-        egress-policy: audit
+      - name: Download cmsis toolbox
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: cmsis-toolbox-linux-amd64
+          path: cmsis-toolbox
 
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Set execution permissions
+        run: |
+          chmod -R +x ./cmsis-toolbox/bin/*
+  
+      - name: Get toolbox path
+        if: always()
+        id: toolbox_path
+        shell: bash
+        run: |
+          echo "path=$(echo "$(pwd)/cmsis-toolbox/bin")" >> $GITHUB_OUTPUT
+          
+      - name: Binary version info
+        if: always()
+        shell: bash
+        run: |
+          export PATH="${{steps.toolbox_path.outputs.path}}:$PATH"
+          export CMSIS_PACK_ROOT="$(pwd)/local_pack_root"
+          csolution -V
+          cpackget -V
+          cbuild -V
+          cbuild2cmake -V
+          cbuildgen -V
 
-    - name: Set up Python
-      uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
-      with:
-        python-version: '3.11'
-        cache: 'pip'
+      - name: Read Config and Clone Repositories
+        shell: bash
+        working-directory: ./test
+        run: |
+          set -x  # Enable debugging
+          mkdir -p new_test_dir
+          cat repos.txt | tr -d '\r' > repos_clean.txt  # Ensure no Windows line endings
+          while IFS= read -r repo || [[ -n "$repo" ]]; do
+            if [[ -n "$repo" ]]; then
+              echo "Cloning $repo..."
+              git clone "$repo" "new_test_dir/$(basename "$repo" .git)" || echo "Failed to clone $repo"
+            fi
+          done < repos_clean.txt
 
-    - name: Install pip dependencies
-      run: |
-          pip install --upgrade pip
-          pip install -r test/requirements.txt
+      # - name: Clone Input Examples
+      #   shell: bash
+      #   continue-on-error: true
+      #   working-directory: ./test
+      #   run: |
+      #     export PATH="${{steps.toolbox_path.outputs.path}}:$PATH"
+      #     export CMSIS_PACK_ROOT="$(pwd)/local_pack_root"
+      #     robot --outputdir reports-linux-amd64 \
+      #       --variable CLONE_DIR:new_test_dir \
+      #       --consolewidth=150 \
+      #       ./performance_test.robot
 
-    - name: Download reports
-      uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
-      with:
-        path: artifacts
-        pattern: reports-*
+      - name: Run new benchmarks
+        working-directory: ./test
+        run: |
+          export PATH="${{steps.toolbox_path.outputs.path}}:$PATH"
+          export CMSIS_PACK_ROOT="$(pwd)/local_pack_root"
+          hyperfine --warmup 3 --runs 5 \
+            "cbuild setup ./new_test_dir/csolution-examples/Hello/Hello.csolution.yml -p -S --update-rte --toolchain AC6" \
+            "cbuild setup ./new_test_dir/vscode-get-started/get_started.csolution.yml -p -S --update-rte --toolchain AC6" \
+            --export-markdown curr_benchmark_results.md \
+            --export-json curr_benchmark_results.json \
+            --show-output
 
-    - name: Consolidate robot test results
-      working-directory: artifacts
-      continue-on-error: true
-      run: |
-        python -m robot.rebot --name Collective_Robot_Results --outputdir collective_robot_results --output output.xml \
-          ./reports-windows-amd64/output.xml \
-          ./reports-linux-amd64/output.xml \
-          ./reports-darwin-amd64/output.xml
+      - name: Archive JSON Package
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        with:
+          name: curr_test_json
+          path: ./test/curr_benchmark_results.json
 
-    - name: Generate Summary report
-      if: always()
-      run: |
-        python ./test/lib/execution_summary.py artifacts \
-          -r ./test/reference.md \
-          -o artifacts/collective_robot_results/output.xml \
-          -m summary_report.md
+      - name: Print new report
+        if: always()
+        working-directory: ./test
+        run: |
+          cat curr_benchmark_results.md >> $GITHUB_STEP_SUMMARY
 
-    - name: Print E2E Report
-      if: always()
-      run: cat summary_report.md >> $GITHUB_STEP_SUMMARY
-
-    - name: Archieve consolidated test results
-      if: always()
-      uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
-      with:
-        name: consolidated-reports
-        path: artifacts/collective_robot_results
-        retention-days: ${{ env.retention-days }}
+      - name: Compare Benchmark Results
+        working-directory: ./test
+        run: |
+          python ./lib/performance_compare.py -r released_benchmark_results.json -c curr_benchmark_results.json
