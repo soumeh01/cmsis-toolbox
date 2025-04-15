@@ -487,7 +487,7 @@ jobs:
           vcpkg-downloads: "${{ github.workspace }}/.vcpkg/downloads"
           cache: "-"
 
-      - name: Print released binary version info
+      - name: Print reference binary version info
         if: always()
         shell: bash
         run: |
@@ -512,42 +512,41 @@ jobs:
         working-directory: ./test
         run: |
           set -x  # Enable debugging
-          mkdir -p old_test_dir
+          mkdir -p ref_test_dir
           cat performance/input_example_repos.txt | tr -d '\r' > repos_clean.txt  # Ensure no Windows line endings
           while IFS= read -r repo || [[ -n "$repo" ]]; do
             if [[ -n "$repo" ]]; then
               echo "Cloning $repo..."
-              git clone "$repo" "old_test_dir/$(basename "$repo" .git)" || echo "Failed to clone $repo"
+              git clone "$repo" "ref_test_dir/$(basename "$repo" .git)" || echo "Failed to clone $repo"
             fi
           done < repos_clean.txt
 
-      - name: Run old benchmark
+      - name: Collect Performance Metrics (Reference Toolbox)
         working-directory: ./test
         run: |
           hyperfine --warmup 3 --runs 5 \
-            "cbuild setup ./old_test_dir/csolution-examples/Hello/Hello.csolution.yml -p -S --update-rte --toolchain AC6" \
-            "cbuild setup ./old_test_dir/vscode-get-started/get_started.csolution.yml -p -S --update-rte --toolchain AC6" \
-            "cbuild setup ./old_test_dir/CMSIS-RTX/Examples/Blinky.csolution.yml -p -S --update-rte --toolchain AC6" \
-            "cbuild setup ./old_test_dir/CMSIS-RTX/Examples/Blinky.csolution.yml -p -S --update-rte --toolchain GCC" \
-            "cbuild setup ./old_test_dir/CMSIS-RTX/Examples/Blinky.csolution.yml -p -S --update-rte --toolchain CLANG" \
-            "cbuild setup ./old_test_dir/CMSIS-RTX/Examples/Blinky.csolution.yml -p -S --update-rte --toolchain IAR" \
-            --export-markdown released_benchmark_results.md \
-            --export-json released_benchmark_results.json \
+            "cbuild setup ./ref_test_dir/csolution-examples/Hello/Hello.csolution.yml -p -S --update-rte --toolchain AC6" \
+            "cbuild setup ./ref_test_dir/vscode-get-started/get_started.csolution.yml -p -S --update-rte --toolchain AC6" \
+            "cbuild setup ./ref_test_dir/CMSIS-RTX/Examples/Blinky/Blinky.csolution.yml -p -S --update-rte --toolchain AC6" \
+            "cbuild setup ./ref_test_dir/CMSIS-RTX/Examples/Blinky/Blinky.csolution.yml -p -S --update-rte --toolchain GCC" \
+            "cbuild setup ./ref_test_dir/CMSIS-RTX/Examples/Blinky/Blinky.csolution.yml -p -S --update-rte --toolchain CLANG" \
+            --export-markdown ref_benchmark_results.md \
+            --export-json ref_benchmark_results.json \
             --show-output
 
-      - name: Archive JSON Package
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: old_test_json
-          path: ./test/released_benchmark_results.json
+      # - name: Archive JSON Package
+      #   uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      #   with:
+      #     name: ref_test_json
+      #     path: ./test/released_benchmark_results.json
 
-      - name: Print old benchmark report
-        if: always()
-        working-directory: ./test
-        run: |
-          echo -e "## Reference performance data\n" | cat - released_benchmark_results.md >> temp.md
-          mv temp.md released_benchmark_results.md
-          cat released_benchmark_results.md >> $GITHUB_STEP_SUMMARY
+      # - name: Print old benchmark report
+      #   if: always()
+      #   working-directory: ./test
+      #   # echo -e "## Reference performance data\n" | cat - released_benchmark_results.md >> temp.md
+      #   # mv temp.md released_benchmark_results.md
+      #   run: |
+      #     cat released_benchmark_results.md >> $GITHUB_STEP_SUMMARY
 
       - name: Download cmsis toolbox
         uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4.2.1
@@ -583,44 +582,59 @@ jobs:
         working-directory: ./test
         run: |
           set -x  # Enable debugging
-          mkdir -p new_test_dir
+          mkdir -p curr_test_dir
           cat performance/input_example_repos.txt | tr -d '\r' > repos_clean.txt  # Ensure no Windows line endings
           while IFS= read -r repo || [[ -n "$repo" ]]; do
             if [[ -n "$repo" ]]; then
               echo "Cloning $repo..."
-              git clone "$repo" "new_test_dir/$(basename "$repo" .git)" || echo "Failed to clone $repo"
+              git clone "$repo" "curr_test_dir/$(basename "$repo" .git)" || echo "Failed to clone $repo"
             fi
           done < repos_clean.txt
 
-      - name: Run new benchmarks
+      - name: Collect Performance Metrics (Latest Toolbox)
         working-directory: ./test
         run: |
           export PATH="${{steps.toolbox_path.outputs.path}}:$PATH"
           export CMSIS_PACK_ROOT="$(pwd)/local_pack_root"
           hyperfine --warmup 3 --runs 5 \
-            "cbuild setup ./new_test_dir/csolution-examples/Hello/Hello.csolution.yml -p -S --update-rte --toolchain AC6" \
-            "cbuild setup ./new_test_dir/vscode-get-started/get_started.csolution.yml -p -S --update-rte --toolchain AC6" \
-            "cbuild setup ./old_test_dir/CMSIS-RTX/Examples/Blinky.csolution.yml -p -S --update-rte --toolchain AC6" \
-            "cbuild setup ./old_test_dir/CMSIS-RTX/Examples/Blinky.csolution.yml -p -S --update-rte --toolchain GCC" \
-            "cbuild setup ./old_test_dir/CMSIS-RTX/Examples/Blinky.csolution.yml -p -S --update-rte --toolchain CLANG" \
-            "cbuild setup ./old_test_dir/CMSIS-RTX/Examples/Blinky.csolution.yml -p -S --update-rte --toolchain IAR" \
+            "cbuild setup ./curr_test_dir/csolution-examples/Hello/Hello.csolution.yml -p -S --update-rte --toolchain AC6" \
+            "cbuild setup ./curr_test_dir/vscode-get-started/get_started.csolution.yml -p -S --update-rte --toolchain AC6" \
+            "cbuild setup ./curr_test_dir/CMSIS-RTX/Examples/Blinky/Blinky.csolution.yml -p -S --update-rte --toolchain AC6" \
+            "cbuild setup ./curr_test_dir/CMSIS-RTX/Examples/Blinky/Blinky.csolution.yml -p -S --update-rte --toolchain GCC" \
+            "cbuild setup ./curr_test_dir/CMSIS-RTX/Examples/Blinky/Blinky.csolution.yml -p -S --update-rte --toolchain CLANG" \
             --export-markdown curr_benchmark_results.md \
             --export-json curr_benchmark_results.json \
             --show-output
 
-      - name: Archive JSON Package
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: curr_test_json
-          path: ./test/curr_benchmark_results.json
+      # - name: Archive JSON Package
+      #   uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      #   with:
+      #     name: curr_test_json
+      #     path: ./test/curr_benchmark_results.json
 
-      - name: Print new report
+      # - name: Print new report
+      #   if: always()
+      #   working-directory: ./test
+      #   # echo -e "## Current performance data\n" | cat - curr_benchmark_results.md >> temp.md
+      #   # mv temp.md curr_benchmark_results.md
+      #   run: |
+      #     cat curr_benchmark_results.md >> $GITHUB_STEP_SUMMARY
+
+      - name: Generate Comparison Report
         if: always()
         working-directory: ./test
         run: |
-          echo -e "## Current performance data\n" | cat - curr_benchmark_results.md >> temp.md
-          mv temp.md curr_benchmark_results.md
-          cat curr_benchmark_results.md >> $GITHUB_STEP_SUMMARY
+          # Generate Comparison report
+          # Path to the reference benchmark results (from last known release)
+          # Path to the current benchmark results (from the latest run)
+          # --verbose: Verbose output
+          # --output: Path to the output comparison report
+          python ./performance/generate_comparison.py \
+            ref_benchmark_results.md \
+            curr_benchmark_results.md \
+            --verbose \
+            --output comparison_results.md
+          cat comparison_results.md >> $GITHUB_STEP_SUMMARY
 
       - name: Compare Benchmark Results
         working-directory: ./test
@@ -630,7 +644,7 @@ jobs:
           # -c: Path to the current benchmark results (from the latest run)
           # -p: Permissible limit multiplier (e.g., 1.10 allows up to 10% permissible degrade)
           python ./performance/check_perf_regression.py \
-            -r released_benchmark_results.json \
+            -r ref_benchmark_results.json \
             -c curr_benchmark_results.json \
             -p 1.10
 
