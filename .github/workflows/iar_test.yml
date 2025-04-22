@@ -54,4 +54,4 @@ jobs:
         run: |
           export IAR_LMS_BEARER_TOKEN=${{ secrets.IAR_TOKEN }}
           csolution list toolchains
-          cbuild ./test/data/build-c/solution.csolution.yml -p --update-rte -j 1
+          cbuild ./test/data/build-c/solution.csolution.yml -p --update-rte
