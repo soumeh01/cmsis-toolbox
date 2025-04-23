@@ -40,6 +40,12 @@ jobs:
         run: |
           armlm activate --server https://mdk-preview.keil.arm.com --product KEMDK-COM0
 
+      - name: Activate Arm tool license
+        working-directory: ./test
+        shell: bash
+        run: |
+          armlm inspect
+
       - name: Binary version info
         shell: bash
         run: |
