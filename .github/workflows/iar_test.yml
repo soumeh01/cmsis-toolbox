@@ -34,24 +34,17 @@ jobs:
           vcpkg-downloads: "${{ github.workspace }}/.vcpkg/downloads"
           cache: "-"
 
-      - name: Inspect IAR Toolchain
-        working-directory: ./test
-        run: |
-          iccarm --version
-          ilinkarm --version
-          iarchive --version
-
-      - name: Inspect IAR Toolchain
-        run: |
-          iccarm --version
-          ilinkarm --version
-          iarchive --version
-
       - name: Activate Arm tool license
         working-directory: ./test
         shell: bash
         run: |
           armlm activate --server https://mdk-preview.keil.arm.com --product KEMDK-COM0
+
+      - name: Inspect IAR Toolchain
+        run: |
+          iccarm --version
+          ilinkarm --version
+          iarchive --version
 
       - name: Arm tool license inspect-1
         working-directory: ./test
