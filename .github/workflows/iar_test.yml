@@ -41,6 +41,7 @@ jobs:
           armlm activate --server https://mdk-preview.keil.arm.com --product KEMDK-COM0
 
       - name: Inspect IAR Toolchain
+        working-directory: ./test
         run: |
           iccarm --version
           ilinkarm --version
