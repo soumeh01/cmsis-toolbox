@@ -42,6 +42,7 @@ jobs:
 
       - name: Inspect IAR Toolchain
         working-directory: ./test
+        shell: bash
         run: |
           iccarm --version
           ilinkarm --version
