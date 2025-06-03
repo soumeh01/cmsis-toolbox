@@ -1,5 +1,4 @@
 name: iar
-
 on:
   pull_request:
     paths:
