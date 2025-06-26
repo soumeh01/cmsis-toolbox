@@ -41,7 +41,7 @@ jobs:
         id: set-matrix
         with:
           inputFile: '.github/matrix_includes.json'
-          filter: '[?runOnBranch==`always`]'
+          filter: '[?runOnNightly==`true`]'
 
   create-toolbox:
     needs: [ matrix_prep ]
@@ -49,6 +49,7 @@ jobs:
     continue-on-error: true
     strategy:
       matrix: ${{ fromJson(needs.matrix_prep.outputs.matrix) }}
+
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@002fdce3c6a235733a90a27c80493a3241e56863 # v2.12.1
@@ -414,7 +415,7 @@ jobs:
             cbuildgen    -V
 
       - name: Binary version info
-        if: ${{ matrix.arch != 'arm64' }}
+        if: ${{ matrix.arch == 'amd64' }}
         shell: bash
         run: |
           export PATH="${{steps.toolbox_path.outputs.path}}:$PATH"
@@ -439,7 +440,7 @@ jobs:
             ./e2e
 
       - name: Archieve test results
-        if: always()
+        if: matrix.arch == 'amd64' || (startsWith(matrix.runs_on, 'ubuntu') && matrix.arch == 'arm64')
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: reports-${{ matrix.target }}-${{ matrix.arch }}
@@ -484,14 +485,13 @@ jobs:
         python -m robot.rebot --name Collective_Robot_Results --outputdir collective_robot_results --output output.xml \
           ./reports-windows-amd64/output.xml \
           ./reports-linux-amd64/output.xml \
-          ./reports-darwin-amd64/output.xml \
           ./reports-linux-arm64/output.xml
 
     - name: Generate Summary report
       if: always()
       run: |
         python ./test/e2e/lib/execution_summary.py artifacts \
-          -r ./test/e2e/reference.md \
+          -r ./test/e2e/nightly_test_reference.md \
           -o artifacts/collective_robot_results/output.xml \
           -m summary_report.md
 
