@@ -138,12 +138,14 @@ jobs:
           ./reports-linux-amd64/output.xml \
           ./reports-darwin-amd64/output.xml \
           ./reports-linux-arm64/output.xml \
+          ./reports-windows-arm64/output.xml \
+          ./reports-darwin-arm64/output.xml
 
     - name: Generate Summary report
       if: always()
       run: |
         python ./test/e2e/lib/execution_summary.py artifacts \
-          -r ./test/e2e/reference.md \
+          -r ./test/e2e/e2e_test_reference_results.md \
           -o artifacts/collective_robot_results/output.xml \
           -m summary_report.md
 
