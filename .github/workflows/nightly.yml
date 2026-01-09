@@ -34,11 +34,11 @@ jobs:
       test: ${{ steps.test-matrix.outputs.matrix }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@6c439dc8bdf85cadbbce9ed30d1c7b959517bc49 # v2.12.2
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
       - uses: JoshuaTheMiller/conditional-build-matrix@81b51eb8d89e07b86404934b5fecde1cea1163a5 # v2.0.1
         id: build-matrix
@@ -47,10 +47,28 @@ jobs:
           filter: '[?runOnBranch==`always`]'
 
       - uses: JoshuaTheMiller/conditional-build-matrix@81b51eb8d89e07b86404934b5fecde1cea1163a5 # v2.0.1
-        id: test-matrix
+        id: test-matrix-base
         with:
           inputFile: '.github/matrix_includes.json'
           filter: '[?runTests==`true`]'
+
+      - name: Generate matrix with cmake versions
+        id: test-matrix
+        shell: bash
+        run: |
+          base_matrix='${{ steps.test-matrix-base.outputs.matrix }}'
+          # Read CMake version from vcpkg config
+          vcpkg_cmake_version=$(jq -r '.requires."arm:tools/kitware/cmake"' ./test/vcpkg-configuration.json)
+          echo "CMake version from vcpkg config: $vcpkg_cmake_version"
+          cmake_versions="[\"$vcpkg_cmake_version\", \"4.2.1\"]"
+          # base_matrix is expected to be: { "include": [ ... ] }
+          # produce: { "include": [ {..config.., cmake_version: ..}, ... ] }
+          result=$(jq -nc \
+            --argjson base "$base_matrix" \
+            --argjson cmake "$cmake_versions" '
+              { include: [ $base.include[] as $cfg | $cmake[] as $ver | ($cfg + {cmake_version: $ver}) ] }
+            ')
+          echo "matrix=$result" >> $GITHUB_OUTPUT
 
   create-toolbox:
     name: Create toolbox [${{ matrix.target }}-${{ matrix.arch }}]
@@ -61,12 +79,12 @@ jobs:
       matrix: ${{ fromJson(needs.matrix_prep.outputs.build) }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@6c439dc8bdf85cadbbce9ed30d1c7b959517bc49 # v2.12.2
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
         with:
           egress-policy: audit
 
       - name: Checkout cmsis-toolbox repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           fetch-depth: 0
 
@@ -93,14 +111,14 @@ jobs:
 
       # Download and build cbuild executable
       - name: Checkout cbuild repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           repository: Open-CMSIS-PACK/cbuild
           path: cbuild
           fetch-depth: 0
 
       - name: Install Go
-        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: cbuild/go.mod
           cache: false
@@ -118,14 +136,14 @@ jobs:
 
       # Download and build cpackget executable
       - name: Checkout cpackget repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           repository: Open-CMSIS-PACK/cpackget
           path: cpackget
           fetch-depth: 0
 
       - name: Install Go
-        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: cpackget/go.mod
           cache: false
@@ -144,14 +162,14 @@ jobs:
 
       # Download and build cbuild2cmake executable
       - name: Checkout cbuild2cmake repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           repository: Open-CMSIS-PACK/cbuild2cmake
           path: cbuild2cmake
           fetch-depth: 0
 
       - name: Install Go
-        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: cbuild2cmake/go.mod
           cache: false
@@ -169,14 +187,14 @@ jobs:
 
       # Download and build vidx2pidx executable
       - name: Checkout vidx2pidx repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           repository: Open-CMSIS-PACK/vidx2pidx
           path: vidx2pidx
           fetch-depth: 0
 
       - name: Install Go
-        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: vidx2pidx/go.mod
           cache: false
@@ -194,14 +212,14 @@ jobs:
 
       # Download and build cbridge executable
       - name: Checkout cbridge repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           repository: Open-CMSIS-PACK/generator-bridge
           path: cbridge
           fetch-depth: 0
 
       - name: Install Go
-        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: cbridge/go.mod
           cache-dependency-path: cbridge/go.sum
@@ -242,7 +260,7 @@ jobs:
           fi
 
       - name: Checkout Open-CMSIS-PACK/devtools repo
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           repository: Open-CMSIS-PACK/devtools
           path: devtools
@@ -271,6 +289,7 @@ jobs:
           curl https://raw.githubusercontent.com/Open-CMSIS-Pack/Open-CMSIS-Pack-Spec/main/schema/PACK.xsd --output ./cmsis-toolbox/etc/PACK.xsd
           curl https://raw.githubusercontent.com/Open-CMSIS-Pack/Open-CMSIS-Pack-Spec/main/schema/PackIndex.xsd --output ./cmsis-toolbox/etc/PackIndex.xsd
           curl https://raw.githubusercontent.com/Open-CMSIS-Pack/debug-adapter-registry/refs/heads/main/registry/debug-adapters.yml --output ./cmsis-toolbox/etc/debug-adapters.yml
+          curl https://raw.githubusercontent.com/Open-CMSIS-Pack/debug-adapter-registry/refs/heads/main/schemas/debug-adapters.schema.json --output ./cmsis-toolbox/etc/debug-adapters.schema.json
           cp ./docs/LICENSE.txt ./cmsis-toolbox
           cp ./docs/index.html ./cmsis-toolbox/doc
 
@@ -285,7 +304,7 @@ jobs:
             sed -i '/set(EXT/c\  set(EXT .exe)' ./cmsis-toolbox/etc/CLANG_TI.4.0.1.cmake
 
       - name: Set up Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
         with:
           python-version: '3.11'
           cache: 'pip'
@@ -320,7 +339,7 @@ jobs:
 
       - name: Archive cmsis-toolbox
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: cmsis-toolbox-${{ matrix.target }}-${{ matrix.arch }}
           path: cmsis-toolbox
@@ -344,14 +363,14 @@ jobs:
 
       - name: Archive Debian Package
         if: ${{ matrix.target == 'linux' && matrix.arch == 'amd64' }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: cmsis-toolbox-debian-package
           path: ./debian/build/cmsis-toolbox_*_amd64.deb
           retention-days: ${{ env.retention-days }}
 
-  run-tests:
-    name: Run Tests [${{ matrix.target }}-${{ matrix.arch }}]
+  test:
+    name: test(${{ matrix.runs_on }},${{ matrix.arch }},CMake ${{ matrix.cmake_version }})
     needs: [ matrix_prep, create-toolbox ]
     runs-on: ${{ matrix.runs_on }}
     continue-on-error: true
@@ -360,38 +379,76 @@ jobs:
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@6c439dc8bdf85cadbbce9ed30d1c7b959517bc49 # v2.12.2
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
         with:
           egress-policy: audit
 
       - name: Checkout toolbox repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
       - name: Set up Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
         with:
           python-version: '3.11'
           cache: 'pip'
 
       - name: Install pip dependencies
+        shell: bash
         run: |
             pip install --upgrade pip
             pip install -r test/e2e/requirements.txt
 
+      - name: Create vcpkg config without CMake
+        if: matrix.cmake_version != '3.31.5'
+        shell: bash
+        run: |
+          jq 'del(.requires."arm:tools/kitware/cmake")' ./test/vcpkg-configuration.json > ./test/vcpkg-configuration-temp.json
+
       - name: Setup vcpkg environment
-        uses: ARM-software/cmsis-actions/vcpkg@f608f32a6d83e90d79e1f2bbb7812fdb94bf1679 # v1
+        if: matrix.cmake_version == '3.31.5'
+        uses: ARM-software/cmsis-actions/vcpkg@afc8e1a46fad8a5e1a08f8477b71050d442f60a7 # v1
         with:
           config: "./test/vcpkg-configuration.json"
           vcpkg-downloads: "${{ github.workspace }}/.vcpkg/downloads"
           cache: "-"
 
+      - name: Setup vcpkg environment (without CMake)
+        if: matrix.cmake_version != '3.31.5'
+        uses: ARM-software/cmsis-actions/vcpkg@afc8e1a46fad8a5e1a08f8477b71050d442f60a7 # v1
+        with:
+          config: "./test/vcpkg-configuration-temp.json"
+          vcpkg-downloads: "${{ github.workspace }}/.vcpkg/downloads"
+          cache: "-"
+
+      # Overlay CMake for non-vcpkg runs (no need to mutate the vcpkg config)
+      - name: Install CMake ${{ matrix.cmake_version }} (amd64)
+        if: matrix.cmake_version != '3.31.5' && matrix.arch == 'amd64'
+        uses: jwlawson/actions-setup-cmake@802fa1a2c4e212495c05bf94dba2704a92a472be # v2.0.2
+        with:
+          cmake-version: '${{ matrix.cmake_version }}'
+
+      - name: Install CMake ${{ matrix.cmake_version }} (arm64)
+        if: matrix.cmake_version != '3.31.5' && matrix.arch == 'arm64'
+        shell: bash
+        run: |
+          # Install CMake via pip for ARM64 compatibility
+          pip install cmake==${{ matrix.cmake_version }}
+
+      - name: Confirm CMake selected
+        shell: bash
+        run: |
+          echo "cmake_version matrix value: ${{ matrix.cmake_version }}"
+          which cmake || true
+          cmake --version
+
       - name: Activate Arm tool license
+        shell: bash
         run: |
           armlm activate --server https://mdk-preview.keil.arm.com --product KEMDK-COM0
         working-directory: ./test
 
       - name: Download cmsis toolbox ${{ matrix.target }} ${{ matrix.arch }}
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: cmsis-toolbox-${{ matrix.target }}-${{ matrix.arch }}
           path: cmsis-toolbox
@@ -416,19 +473,19 @@ jobs:
           IAR_LMS_BEARER_TOKEN: ${{ secrets.IAR_TOKEN }}
         run: |
           export PATH="${{steps.toolbox_path.outputs.path}}:$PATH"
-          robot --outputdir reports-${{ matrix.target }}-${{ matrix.arch }} \
-            --variable TEST_ENV_FILE:test-env-${{ matrix.target }}-${{ matrix.arch }}.md \
-            --consolewidth=150 --settag ${{ matrix.target }}-${{ matrix.arch }} \
-            --name ${{ matrix.target }}-${{ matrix.arch }} \
+          robot --outputdir reports-${{ matrix.target }}-${{ matrix.arch }}-cmake${{ matrix.cmake_version }} \
+            --variable TEST_ENV_FILE:test-env-${{ matrix.target }}-${{ matrix.arch }}-cmake${{ matrix.cmake_version }}.md \
+            --consolewidth=150 --settag ${{ matrix.target }}-${{ matrix.arch }}-cmake${{ matrix.cmake_version }} \
+            --name ${{ matrix.target }}-${{ matrix.arch }}-cmake${{ matrix.cmake_version }} \
             ./e2e
           echo "exit_code=$?" >> $GITHUB_OUTPUT
 
-      - name: Archieve test results
+      - name: Archive test results
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: reports-${{ matrix.target }}-${{ matrix.arch }}
-          path: ./test/reports-${{ matrix.target }}-${{ matrix.arch }}
+          name: reports-${{ matrix.target }}-${{ matrix.arch }}-cmake${{ matrix.cmake_version }}
+          path: ./test/reports-${{ matrix.target }}-${{ matrix.arch }}-cmake${{ matrix.cmake_version }}
           retention-days: ${{ env.retention-days }}
 
       - name: Fail job if Robot tests failed
@@ -438,31 +495,33 @@ jobs:
           exit 1
 
   consolidate-report:
-    needs: [run-tests]
+    needs: [test]
     runs-on: ubuntu-latest
+    if: always() && needs.test.result != 'skipped'
     permissions: write-all
-    if: needs.run-tests.result == 'success' || needs.run-tests.result == 'failure'
+
     steps:
     - name: Harden Runner
-      uses: step-security/harden-runner@6c439dc8bdf85cadbbce9ed30d1c7b959517bc49 # v2.12.2
+      uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
       with:
         egress-policy: audit
 
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
     - name: Set up Python
-      uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+      uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
       with:
         python-version: '3.11'
         cache: 'pip'
 
     - name: Install pip dependencies
+      shell: bash
       run: |
           pip install --upgrade pip
           pip install -r test/e2e/requirements.txt
 
     - name: Download reports
-      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+      uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
       with:
         path: artifacts
         pattern: reports-*
@@ -471,12 +530,17 @@ jobs:
       working-directory: artifacts
       continue-on-error: true
       run: |
-        python -m robot.rebot --name Collective_Robot_Results --outputdir collective_robot_results --output output.xml \
-          ./reports-windows-amd64/output.xml \
-          ./reports-linux-amd64/output.xml
+        python -m robot.rebot --name Collective_Robot_Results \
+            --outputdir collective_robot_results \
+            --output output.xml \
+            ./reports-windows-amd64-cmake3.31.5/output.xml \
+            ./reports-windows-amd64-cmake4.2.1/output.xml \
+            ./reports-linux-amd64-cmake3.31.5/output.xml \
+            ./reports-linux-amd64-cmake4.2.1/output.xml
 
     - name: Generate Summary report
       if: always()
+      shell: bash
       run: |
         python ./test/e2e/lib/execution_summary.py artifacts \
           -r ./test/e2e/reference.md \
@@ -487,9 +551,9 @@ jobs:
       if: always()
       run: cat summary_report.md >> $GITHUB_STEP_SUMMARY
 
-    - name: Archieve consolidated test results
+    - name: Archive consolidated test results
       if: always()
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
       with:
         name: consolidated-reports
         path: artifacts/collective_robot_results
@@ -500,15 +564,15 @@ jobs:
     runs-on: [ ubuntu-latest ]
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@6c439dc8bdf85cadbbce9ed30d1c7b959517bc49 # v2.12.2
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
         with:
           egress-policy: audit
 
       - name: Checkout toolbox repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
       - name: Set up Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
         with:
           python-version: '3.11'
           cache: 'pip'
@@ -519,7 +583,7 @@ jobs:
             pip install -r test/performance/requirements.txt
 
       - name: Setup vcpkg environment
-        uses: ARM-software/cmsis-actions/vcpkg@f608f32a6d83e90d79e1f2bbb7812fdb94bf1679 # v1
+        uses: ARM-software/cmsis-actions/vcpkg@afc8e1a46fad8a5e1a08f8477b71050d442f60a7 # v1
         with:
           config: "./test/vcpkg-configuration.json"
           vcpkg-downloads: "${{ github.workspace }}/.vcpkg/downloads"
@@ -536,13 +600,13 @@ jobs:
           sudo apt-get install -y hyperfine unzip
 
       # Download the reference toolbox release
-      # This needed to be updated when positive performance delta is expected
+      # This needed to be updated when a positive performance delta is expected
       - name: Download Reference cmsis-toolbox
         continue-on-error: true
-        uses: robinraju/release-downloader@v1.12
+        uses: robinraju/release-downloader@daf26c55d821e836577a15f77d86ddc078948b05 # v1.12
         with:
           repository: Open-CMSIS-Pack/cmsis-toolbox
-          tag: "2.8.0-test-reference"
+          tag: "2.12.0-test-reference"
           fileName: "cmsis-toolbox-linux-amd64.zip"
 
       - name: Unzip Reference cmsis-toolbox
@@ -604,7 +668,7 @@ jobs:
           rm -rf ${{steps.ref_toolbox_path.outputs.path}}
 
       - name: Download cmsis-toolbox
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: cmsis-toolbox-linux-amd64
           path: cmsis-toolbox

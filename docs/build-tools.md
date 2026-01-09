@@ -22,7 +22,7 @@ There are several ways to configure the CMSIS-Pack repository:
 Orchestrate the overall build steps utilizing the various tools of the CMSIS-Toolbox and a CMake-based compilation process.
 
 ```txt
-cbuild: Build Invocation 2.9.0 (C) 2022-2025 Arm Ltd. and Contributors
+cbuild: Build Invocation 2.12.0 (C) 2022-2025 Arm Ltd. and Contributors
 
 Usage:
   cbuild [command] <name>.csolution.yml [options]
@@ -48,8 +48,16 @@ Options:
   -n, --no-schema-check    Skip schema check
   -O, --output arg         Base folder for output files, 'outdir' and 'tmpdir' (default "Same as '*.csolution.yml'")
   -p, --packs              Download missing software packs with cpackget
+  -j, --jobs int           Number of job slots for parallel execution (default 8)
+  -l, --load arg           Set policy for packs loading [latest | all | required] (default "required")
+      --log arg            Save output messages in a log file
+  -n, --no-schema-check    Skip schema check
+  -O, --output arg         Base folder for output files, 'outdir' and 'tmpdir' (default "Same as '*.csolution.yml'")
+  -p, --packs              Download missing software packs with cpackget
   -q, --quiet              Suppress output messages except build invocations
   -r, --rebuild            Remove intermediate and output directories and rebuild
+  -s, --schema             Validate project input file(s) against schema [deprecated]
+      --skip-convert       Skip csolution convert step
   -t, --target arg         Optional CMake target name
       --toolchain arg      Input toolchain to be used
       --update-rte         Update the RTE directory and files
@@ -78,15 +86,19 @@ Commands:
   list configs                  Print list of configuration files
   list contexts                 Print list of contexts in a <name>.csolution.yml
   list components               Print list of available components
+  list debuggers                Print list of debuggers from debug-adapters.yml
   list dependencies             Print list of unresolved project dependencies
   list devices                  Print list of available device names
   list environment              Print list of environment configurations
+  list examples                 Print list of examples
+  list templates                Print list of templates
   list generators               Print list of code generators of a given context
   list layers                   Print list of available, referenced and compatible layers
   list packs                    Print list of used packs from the pack repository
   list target-sets              Print list of target-sets in a <name>.csolution.yml
   list toolchains               Print list of supported toolchains
   run                           Run code generator
+  rpc                           Run remote procedure call server
   update-rte                    Create/update configuration files and validate solution
 
 Options:
@@ -104,7 +116,6 @@ Options:
   -N, --no-update-rte           Skip creation of RTE directory and files
   -o,-O --output arg            Base folder for output files, 'outdir' and 'tmpdir' (default "Same as '*.csolution.yml'")
   -q, --quiet                   Run silently, printing only error messages
-  -R, --relative-paths          Print paths relative to project or ${CMSIS_PACK_ROOT}
   -S, --context-set             Select the context names from cbuild-set.yml for generating the target application
   -t, --toolchain arg           Selection of the toolchain used in the project optionally with version
   -v, --verbose                 Enable verbose messages
@@ -118,7 +129,8 @@ Use 'csolution <command> -h' for more information about a command.
 Manage the installation of *software packs* on the host computer.
 
 ``` txt
-cpackget version 2.1.7 (C) 2021-2023 Linaro, 2024-2025 Arm Ltd.
+cpackget version 2.1.9
+ (C) 2021-2023 Linaro, 2024-2025 Arm Ltd.
 
 Usage:
   cpackget [command] [flags]
@@ -229,7 +241,7 @@ To install software packs from a public web service, run:
 
 ```shell
 cpackget add Arm::CMSIS
-cpackget add Arm::CMSIS@5.9.0     # optional with version specification
+cpackget add Arm::CMSIS@6.1.0     # optional with version specification
 ```
 
 ### List Installed Packs
@@ -314,7 +326,7 @@ csolution run -g CubeMX mysolution.csolution.yml -c Blinky.Debug+STM32L4
 
 ### Use context set
 
-When working with [multiple related projects](build-overview.md#project-setup-for-related-projects), it might be necessary to combine different build types for debugging and downloading in the target hardware. The option `--context-set` allows you to save and reuse the selected `--context` options.
+When working with [multiple related projects](build-overview.md#configure-related-projects), it might be necessary to combine different build types for debugging and downloading in the target hardware. The option `--context-set` allows you to save and reuse the selected `--context` options.
 
 Write the selected `--context` options to the file `SimpleTZ.cbuild-set.yml`. Refer to [file structure of `*.cbuild-set.yml`](YML-CBuild-Format.md#cbuild-setyml) for details.
 
