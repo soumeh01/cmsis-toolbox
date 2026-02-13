@@ -9,7 +9,7 @@ name: nightly
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 2 * * *'
+    - cron: '*/5 * * * *'
   pull_request:
     paths:
       - '.github/workflows/nightly.yml'
@@ -28,7 +28,6 @@ concurrency:
 jobs:
   matrix_prep:
     runs-on: ubuntu-latest
-    if: github.repository == 'Open-CMSIS-Pack/cmsis-toolbox'
     outputs:
       build: ${{ steps.build-matrix.outputs.matrix }}
       test: ${{ steps.test-matrix.outputs.matrix }}
@@ -72,6 +71,7 @@ jobs:
 
   create-toolbox:
     name: Create toolbox [${{ matrix.target }}-${{ matrix.arch }}]
+    if: github.repository == 'Open-CMSIS-Pack/cmsis-toolbox'
     needs: [ matrix_prep ]
     runs-on: ${{ matrix.runs_on }}
     continue-on-error: true
