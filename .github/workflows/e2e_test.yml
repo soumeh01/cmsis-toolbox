@@ -44,7 +44,7 @@ jobs:
           vcpkg_cmake_version=$(jq -r '.requires."arm:tools/kitware/cmake"' ./test/vcpkg-configuration.json)
           echo "CMake version from vcpkg config: $vcpkg_cmake_version"
 
-          cmake_versions="[\"$vcpkg_cmake_version\", \"4.2.1\"]"
+          cmake_versions="[\"$vcpkg_cmake_version\"]"
 
           # base_matrix is expected to be: { "include": [ ... ] }
           # produce: { "include": [ {..config.., cmake_version: ..}, ... ] }
@@ -201,9 +201,7 @@ jobs:
           python -m robot.rebot --name Collective_Robot_Results \
             --outputdir collective_robot_results \
             --output output.xml \
-            ./reports-windows-amd64-cmake3.31.5/output.xml \
             ./reports-windows-amd64-cmake4.2.1/output.xml \
-            ./reports-linux-amd64-cmake3.31.5/output.xml \
             ./reports-linux-amd64-cmake4.2.1/output.xml
 
       - name: Generate Summary report
